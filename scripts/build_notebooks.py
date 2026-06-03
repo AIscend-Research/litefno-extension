@@ -98,7 +98,7 @@ if not os.path.isdir(REPO_DIR):
     subprocess.run(["git", "clone", "--depth", "1", REPO_URL], check=True)
 os.chdir(REPO_DIR)
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-e", "."], check=True)
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "neuraloperator", "the_well"], check=False)
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "neuraloperator", "the_well", "thop"], check=False)
 print("cwd:", os.getcwd())"""))
 
 M(("code", """import json, time, math
@@ -286,7 +286,7 @@ if not os.path.isdir(REPO_DIR):
     subprocess.run(["git", "clone", "--depth", "1", REPO_URL], check=True)
 os.chdir(REPO_DIR)
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-e", "."], check=True)
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "neuraloperator", "the_well"], check=False)
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "neuraloperator", "the_well", "thop"], check=False)
 print("cwd:", os.getcwd())"""))
 
 P(("code", """import json, time, copy, csv
@@ -571,6 +571,69 @@ if ARMS:
     ax.set_title("Inference throughput"); ax.legend(fontsize=8)
     fig.tight_layout(); fig.savefig(OUT / "ext8_benchmark.png", dpi=150); plt.close(fig)
     print("saved ext8_benchmark.{csv,png}")"""))
+
+P(("md", """## Freebie A - Reproducibility audit: released code vs. paper
+
+A zero-compute reproducibility finding (the kind MLRC explicitly values): we
+programmatically check whether the released implementations contain spectral
+(FFT) operations, and contrast that with the paper's described architecture."""))
+P(("code", """import inspect
+from litefno.models import litefno as _cnn_mod, fno_s as _fnos_mod
+
+def has_spectral(mod):
+    s = inspect.getsource(mod).lower()
+    return ("fft" in s) or ("rfft" in s) or ("spectralconv" in s)
+
+finding = {
+    "paper_litefno_architecture": "spectral FFT + CP low-rank + transduction",
+    "repo_litefno_class_is_spectral": has_spectral(_cnn_mod),
+    "repo_fno_s_class_is_spectral": has_spectral(_fnos_mod),
+}
+print("Reproducibility finding")
+print("  Paper LiteFNO  : spectral (FFT) + CP low-rank factorization + transduction")
+print("  Repo 'LiteFNO' : spectral?", finding["repo_litefno_class_is_spectral"])
+print("  Repo  FNO-S    : spectral?", finding["repo_fno_s_class_is_spectral"])
+if not finding["repo_litefno_class_is_spectral"]:
+    print("  => MISMATCH: the released 'LiteFNO' is a CNN (no FFT), not the spectral")
+    print("     architecture the paper describes. This motivates our generalization study:")
+    print("     does the spectral machinery actually earn its keep vs a plain low-rank CNN?")
+with open(OUT / "freebieA_repro_audit.json", "w") as f:
+    json.dump(finding, f, indent=2)
+print("saved freebieA_repro_audit.json")"""))
+
+P(("md", "## Freebie B - FLOPs / compute-accuracy trade-off (per arm)"))
+P(("code", """try:
+    from thop import profile
+    HAVE_THOP = True
+except Exception:
+    HAVE_THOP = False
+    print("thop unavailable (pip install thop) - skipping FLOPs")
+
+if ARMS and HAVE_THOP:
+    rows = []
+    x = torch.randn(1, FIELDS, H, W).to(DEVICE)
+    for name, m in ARMS.items():
+        flops = None
+        try:
+            macs, _ = profile(copy.deepcopy(m).to(DEVICE), inputs=(x,), verbose=False)
+            flops = 2 * macs
+        except Exception as e:
+            print(name, "FLOPs failed:", e)
+        _, v = eval_one_step(m, TEST)
+        rows.append({"arm": name, "params": PARAMS[name], "flops": flops, "test_vrmse": v})
+        print(f"{name:>13}: params={PARAMS[name]:,}  flops={flops}  vrmse={v:.5f}")
+    savecsv("freebieB_flops.csv", rows)
+    pts = [r for r in rows if r["flops"]]
+    if pts:
+        fig, ax = plt.subplots(figsize=(6, 4))
+        for r in pts:
+            ax.scatter(r["flops"], r["test_vrmse"])
+            ax.annotate(r["arm"], (r["flops"], r["test_vrmse"]), fontsize=8, xytext=(3, 3), textcoords="offset points")
+        ax.set_xscale("log"); ax.set_yscale("log")
+        ax.set_xlabel("FLOPs / forward (1 sample)"); ax.set_ylabel("test VRMSE")
+        ax.set_title("Compute-accuracy trade-off")
+        fig.tight_layout(); fig.savefig(OUT / "freebieB_flops.png", dpi=150); plt.close(fig)
+    print("saved freebieB_flops.{csv,png}")"""))
 
 P(("md", "## Logs-only analysis (8 datasets, no checkpoint needed)"))
 P(("code", """DATASETS = ["gray_scott_reaction_diffusion","euler_multi_quadrants_openBC","euler_multi_quadrants_periodicBC",
