@@ -5,7 +5,7 @@ dataset:
   dataset_key: data
   input_steps: 1
   output_steps: 1
-  fields: 4
+  fields: 5
   stride: 1
 logging:
   metrics_path: outputs/logs/euler_multi_quadrants_periodicBC_fno_s.jsonl
