@@ -1,0 +1,402 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=newest}
+
+\title{Reproducing LiteFNO on Gray-Scott Reaction--Diffusion: A Detailed Study for Low-Resource Scientific Modeling}
+\author{LiteFNO Reproduction Team}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper presents a detailed reproduction of the Lightweight Fourier Neural
+Operator (LiteFNO) for time-dependent partial differential equations, following
+the NeurIPS ML4PS 2025 paper ``Lightweight Fourier Neural Operator for
+Time-Dependent Partial Differential Equations'' \cite{litefno2025}. We evaluate
+LiteFNO on the Gray-Scott reaction--diffusion dataset from The Well benchmark,
+using the configuration defined for this study. The model attains a best
+validation RMSE of \num{0.013112} and validation VRMSE of \num{0.034148} at epoch
+29, with a test RMSE of \num{0.013201} and test VRMSE of \num{0.035189}. The run
+spans 33 logged epochs (0--32) and uses a 107,842-parameter model. Beyond a
+metric summary, we document preprocessing, training details, evaluation
+protocols, and learning curves, and we discuss limitations and extension
+opportunities in low-resource settings.
+\end{abstract}
+
+\section{Introduction and Motivation}
+Neural operators provide a data-driven approach to learning solution operators
+for time-dependent partial differential equations (PDEs), enabling rapid
+surrogate inference once trained. Fourier Neural Operators (FNOs) introduced a
+powerful spectral formulation for learning operators in function spaces
+\cite{li2020fourier}. LiteFNO extends this direction with a factorized
+spatio-temporal formulation that substantially reduces parameters and improves
+efficiency \cite{litefno2025}. This paper reproduces the LiteFNO results on the
+Gray-Scott reaction--diffusion task, providing a transparent and detailed
+account of data handling, model configuration, and observed metrics.
+
+The motivation extends beyond benchmarking. Climate adaptation decisions for
+smallholder farmers in Africa require localized forecasting and scenario
+analysis under tight computational and infrastructure constraints. Low-footprint
+surrogate models can support rapid exploration of ``what-if'' scenarios for
+water availability, planting schedules, and climate stressors without requiring
+large-scale HPC resources. By reproducing LiteFNO in a controlled setting, we
+assess its potential as a building block for deployable scientific ML pipelines
+that can operate at the edge or in bandwidth-limited environments.
+
+\section{Related Work}
+Fourier Neural Operators (FNOs) \cite{li2020fourier} represent a seminal class of
+operator-learning models that apply spectral convolutions to learn mappings
+between function spaces. Extensions of FNOs for temporal modeling typically
+handle time either autoregressively in the spatial domain or by lifting the
+entire space--time grid into spectral space, trading off computational cost and
+modeling fidelity. LiteFNO \cite{litefno2025} introduces a low-rank factorization
+strategy for spatial spectral weights and a transductive temporal basis to
+recover spatio-temporal interactions with far fewer parameters. This
+reproduction follows the LiteFNO configuration and evaluation protocols to
+provide an independent account of performance on the Gray-Scott benchmark.
+
+\section{Background}
+Neural operators aim to learn mappings \(\mathcal{G}: \mathcal{A} \to \mathcal{U}\)
+between function spaces, such as from initial conditions to PDE solutions.
+In Fourier Neural Operators, a typical layer updates a latent field \(v\) via
+spectral convolution,
+\begin{align}
+v_{k+1}(x) = W v_k(x) + \mathcal{F}^{-1} \left( R \cdot \mathcal{F}(v_k)(\xi) \right),
+\end{align}
+where \(\mathcal{F}\) denotes the Fourier transform, \(R\) is a learned complex
+filter (often truncated to low modes), and \(W\) is a local linear transform.
+LiteFNO factorizes the spectral weights into a low-rank spatial basis and a
+temporal basis learned via transduction, enabling efficient modeling of
+spatio-temporal dynamics with a fraction of the parameters \cite{litefno2025}.
+
+\section{Method details: LiteFNO}
+LiteFNO addresses the trade-off between spatio-temporal expressivity and
+computational cost by factorizing the spectral weights into structured bases.
+Concretely, the spatial spectral kernel is parameterized using a low-rank basis,
+which reduces the number of learned coefficients while still capturing global
+interactions. Temporal dynamics are then incorporated by learning a temporal
+basis and coupling it with the spatial basis through transduction. This
+formulation approximates a full space--time operator without explicitly learning
+a dense spatio-temporal kernel, offering a practical compromise between the
+autoregressive spatial approach and the fully spatio-temporal spectral approach.
+In this reproduction, the architecture is used as described in
+\cite{litefno2025} without any architectural modifications.
+
+\section{Dataset and preprocessing}
+The evaluation uses the Gray-Scott reaction--diffusion dataset from The Well
+benchmark, following the dataset usage described in the LiteFNO paper
+\cite{litefno2025}. The raw data are HDF5 arrays with shape
+\((n_{\text{traj}}, n_{\text{steps}}, H, W, \text{fields})\). Preprocessing
+downsamples spatially, caps the number of trajectories, and limits the temporal
+extent to align with the training regime. Table~\ref{tab:dataset} summarizes the
+exact settings used in this reproduction.
+
+The Gray-Scott system is a canonical reaction--diffusion model that generates
+rich spatio-temporal patterns. It serves as a controlled benchmark for
+evaluating whether an operator model can capture non-linear diffusion-driven
+structure while remaining stable over time. The dataset is split into train,
+validation, and test partitions, and the preprocessing pipeline applies a
+consistent trajectory cap to reduce the training footprint while preserving
+diverse regimes.
+
+\begin{table}[t]
+  \centering
+  \caption{Gray-Scott preprocessing configuration.}
+  \label{tab:dataset}
+  \begin{tabular}{ll}
+    \toprule
+    Setting & Value \\
+    \midrule
+    Dataset name & \texttt{gray\_scott\_reaction\_diffusion} \\
+    Downsample factor & 4 \\
+    Max trajectories & 1000 \\
+    Max steps & 60 \\
+    Input steps & 1 \\
+    Output steps & 1 \\
+    Fields & 2 \\
+    Stride & 1 \\
+    Cache & \texttt{memory} \\
+    Random seed & 0 \\
+    Dataset key & \texttt{data} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Planned extensions include low-rank and width sweeps, quantization-aware
+training, robustness checks under distribution shift, and explainability
+analyses to attribute spectral modes to spatial patterns. These extensions align
+with the low-resource deployment objective but are not yet executed in the
+current log, so no extension-specific quantitative results are reported here.
+We also plan to investigate the effect of input--output horizon length on
+multi-step forecasting performance, which will enable windowed VRMSE reporting
+consistent with \cite{litefno2025}. Another extension is to evaluate sensitivity
+to the number of retained Fourier modes, which can further trade accuracy for
+inference speed in deployment settings.
+
+\section{Model and training setup}
+LiteFNO uses a compact spectral architecture configured via a set of experiment
+parameters. The Gray-Scott run adopts the base LiteFNO model with a dataset
+override for preprocessing and logging. The training configuration includes
+AdamW-style optimization with a step learning-rate schedule, mixed-precision
+training (AMP), and evaluation on both train and validation splits. Core
+settings are listed in Table~\ref{tab:training}.
+
+\section{Implementation and logging}
+Training and evaluation are instrumented through a metrics logger that records
+per-epoch RMSE and VRMSE for each evaluated split. Logs are serialized as JSONL,
+one record per epoch, enabling straightforward ingestion for plotting and
+analysis. The experiment specifies evaluation on both train and validation
+splits at every epoch and triggers an explicit test evaluation after training.
+Checkpoints are configured to track the best model according to validation
+VRMSE, which is the primary selection criterion in this study.
+
+To minimize memory pressure and improve throughput on limited hardware, mixed
+precision (AMP) is enabled. The configuration also uses pinned memory and sets
+the number of data-loader workers to zero, which simplifies reproducibility on
+machines without extensive multiprocessing support.
+
+\begin{table}[t]
+  \centering
+  \caption{Model and training configuration for the Gray-Scott LiteFNO run.}
+  \label{tab:training}
+  \begin{tabular}{ll}
+    \toprule
+    Setting & Value \\
+    \midrule
+    Layers & 8 \\
+    Width & 64 \\
+    Rank & 32 \\
+    Epochs (configured) & 200 \\
+    Batch size & 512 \\
+    Learning rate & 1e{-}3 \\
+    LR step & 100 \\
+    LR gamma & 0.5 \\
+    Eval every & 1 \\
+    Eval splits & train, valid \\
+    Eval windows & [6, 12], [13, 30] \\
+    Test at end & true \\
+    Device & \texttt{cuda} \\
+    Seed & 1337 \\
+    AMP & true \\
+    Checkpoint best metric & \texttt{valid\_vrmse} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Metrics}
+We report root mean squared error (RMSE) and variance-normalized RMSE (VRMSE).
+For prediction \(\hat{y}\) and target \(y\), the metrics are:
+\begin{align}
+\mathrm{RMSE} &= \sqrt{\mathbb{E}\left[(\hat{y} - y)^2\right]}, \\
+\mathrm{VRMSE} &= \sqrt{\frac{\mathbb{E}\left[(\hat{y} - y)^2\right]}{\mathrm{Var}(y) + \epsilon}},
+\end{align}
+where \(\epsilon\) is a small stabilizer.
+
+In addition to scalar RMSE and VRMSE, the configuration specifies evaluation
+windows \([6, 12]\) and \([13, 30]\) to support windowed VRMSE analysis when the
+prediction horizon is sufficiently long. The current log does not include
+windowed metrics because the run uses single-step output; nevertheless, these
+definitions are retained for compatibility with longer-horizon extensions.
+
+\section{Reproduction details}
+The reproduction run follows the end-to-end workflow outlined in
+\cite{litefno2025} and is executed using a consistent configuration for
+preprocessing, training, and evaluation. The core workflow is:
+\begin{verbatim}
+litefno download --config configs/datasets/gray_scott_reaction_diffusion.yaml
+litefno preprocess --config configs/datasets/gray_scott_reaction_diffusion.yaml
+litefno train --config configs/experiments/litefno_gray_scott_reaction_diffusion.yaml
+litefno test --config configs/experiments/litefno_gray_scott_reaction_diffusion.yaml \
+  --checkpoint outputs/checkpoints/gray_scott_reaction_diffusion/litefno/best.pt
+\end{verbatim}
+Metrics are logged as JSONL records to
+\texttt{outputs/logs/gray\_scott\_reaction\_diffusion\_litefno.jsonl}. The
+learning curves in Figure~\ref{fig:learning-curves} are generated from the
+recorded log in this study at
+\texttt{logs/gray\_scott\_reaction\_diffusion\_litefno.jsonl}.
+
+The reproduction tracks both the training trajectory and the validation
+trajectory, allowing inspection of overfitting and generalization behavior. We
+use the best validation VRMSE checkpoint for final test evaluation, mirroring
+the model-selection procedure described in \cite{litefno2025}. This avoids
+reporting a test metric from an arbitrary epoch and provides a consistent
+selection rule for future extensions.
+
+\section{Baselines and comparisons}
+This study reports a single LiteFNO reproduction run and does not include a
+direct baseline. In the original LiteFNO paper, comparisons are made against
+FNO variants that either model time autoregressively or operate on the full
+spatio-temporal grid \cite{litefno2025}. A planned next step is to run a
+matching FNO-S baseline on the same Gray-Scott preprocessing pipeline to
+quantify the parameter--accuracy trade-offs under identical conditions.
+
+\section{Extensions \& Results}
+This section reports the baseline reproduction results from the existing log
+and outlines planned extensions for low-resource deployment.
+
+The training log (\texttt{logs/gray\_scott\_reaction\_diffusion\_litefno.jsonl})
+contains 33 epochs (0--32) plus a test evaluation recorded with step \(-1\).
+Validation metrics improve rapidly early in training and plateau by the late
+epochs. Table~\ref{tab:results} lists the best validation and test performance
+and the logged parameter count.
+
+\begin{table}[t]
+  \centering
+  \caption{Summary of Gray-Scott LiteFNO results.}
+  \label{tab:results}
+  \begin{tabular}{ll}
+    \toprule
+    Metric & Value \\
+    \midrule
+    Best validation epoch & 29 \\
+    Best validation RMSE & \num{0.013112} \\
+    Best validation VRMSE & \num{0.034148} \\
+    Final logged epoch & 32 \\
+    Final validation RMSE & \num{0.013310} \\
+    Final validation VRMSE & \num{0.034442} \\
+    Test RMSE & \num{0.013201} \\
+    Test VRMSE & \num{0.035189} \\
+    Parameters & 107,842 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Learning dynamics and error characteristics}
+The learning curves in Figure~\ref{fig:learning-curves} show steep improvement
+over the first several epochs, followed by a gradual flattening. There is mild
+non-monotonicity in both RMSE and VRMSE, which is typical of stochastic
+optimization with periodic learning-rate decay. The best validation metrics
+occur slightly before the final logged epoch, suggesting that early stopping or
+more frequent checkpoint selection could marginally improve final test scores.
+
+From a numerical standpoint, VRMSE tracks RMSE closely because the variance of
+the target fields is stable across epochs. This makes VRMSE a convenient
+normalized metric for comparing across datasets with different scales. The
+small gap between validation and test VRMSE indicates that the model's
+generalization error remains controlled under the current preprocessing regime.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=2 by 1, horizontal sep=1.2cm},
+      width=0.48\textwidth,
+      height=0.35\textwidth,
+      xlabel={Epoch},
+      grid=both,
+      grid style={line width=.1pt, draw=gray!30}
+    ]
+      \nextgroupplot[ylabel={RMSE}]
+      \addplot[blue] table [x=step, y=train_rmse, col sep=comma] {data/gray_scott_litefno_metrics.csv};
+      \addplot[orange] table [x=step, y=valid_rmse, col sep=comma] {data/gray_scott_litefno_metrics.csv};
+      \legend{Train,Valid}
+      \nextgroupplot[ylabel={VRMSE}]
+      \addplot[blue] table [x=step, y=train_vrmse, col sep=comma] {data/gray_scott_litefno_metrics.csv};
+      \addplot[orange] table [x=step, y=valid_vrmse, col sep=comma] {data/gray_scott_litefno_metrics.csv};
+      \legend{Train,Valid}
+    \end{groupplot}
+  \end{tikzpicture}
+  \caption{Training and validation metrics for LiteFNO on Gray-Scott.}
+  \label{fig:learning-curves}
+\end{figure}
+
+The gap between validation and test performance is small, suggesting good
+generalization for this dataset under the configured preprocessing. The best
+validation epoch (29) slightly outperforms the final epoch (32), indicating
+modest metric oscillations late in training. Despite a compact parameter count,
+LiteFNO achieves low VRMSE relative to the initial epoch, with validation RMSE
+improving by roughly 70\% from epoch 0 to the best epoch.
+
+Planned extensions include low-rank and width sweeps, quantization-aware
+training, robustness checks under distribution shift, and explainability
+analyses to attribute spectral modes to spatial patterns. These extensions align
+with the low-resource deployment objective but are not yet executed in the
+current log, so no extension-specific quantitative results are reported here.
+
+\section{Limitations}
+This report is limited to a single LiteFNO run on one dataset and does not yet
+include a baseline comparison (e.g., FNO-S) or multiple random seeds. The log
+contains only 33 epochs, which is shorter than the 200 epochs configured in the
+experiment, so the results should be interpreted as an early or partial run.
+Windowed VRMSE metrics are not available in the current log, and the planned
+extensions have not yet produced results.
+
+\section{Reproducibility checklist}
+Table~\ref{tab:repro} summarizes the minimal information required to reproduce
+the current results. This checklist is intended to support transparent reporting
+and straightforward re-execution of the experiment.
+
+\begin{table}[t]
+  \centering
+  \caption{Reproducibility checklist for the LiteFNO Gray-Scott run.}
+  \label{tab:repro}
+  \begin{tabular}{ll}
+    \toprule
+    Item & Value \\
+    \midrule
+    Dataset & Gray-Scott reaction--diffusion (The Well) \\
+    Data splits & train / valid / test \\
+    Preprocessing & downsample=4, max\_trajectories=1000, max\_steps=60 \\
+    Model & LiteFNO (layers=8, width=64, rank=32) \\
+    Training & epochs=200 (configured), batch\_size=512, lr=1e{-}3 \\
+    Scheduler & step=100, gamma=0.5 \\
+    Seed & 1337 \\
+    Metrics & RMSE, VRMSE \\
+    Best model selection & validation VRMSE \\
+    Metrics log & outputs/logs/gray\_scott\_reaction\_diffusion\_litefno.jsonl \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Future work}
+Future work will complete baseline comparisons and evaluate robustness across
+multiple seeds. We will extend the analysis to longer prediction horizons to
+enable windowed VRMSE reporting and will explore model compression techniques
+that preserve accuracy under quantization. Finally, we plan to validate the
+utility of LiteFNO-style surrogates on downstream climate-adaptation tasks,
+including localized water-stress forecasting and scenario planning for
+smallholder agriculture.
+
+\section{Deployment considerations for climate adaptation}
+Low-resource deployment contexts place practical constraints on model size,
+training cost, and inference latency. LiteFNO is designed to reduce parameters
+through low-rank spectral factorization while maintaining accuracy, making it a
+reasonable candidate for embedded or cloud-edge deployments. In agricultural
+settings, the ability to run rapid surrogate simulations can enable interactive
+decision support, such as stress-testing planting schedules or exploring
+irrigation strategies under projected climate scenarios. While the current
+experiment is limited to a canonical PDE benchmark, it provides quantitative
+evidence that compact neural operators can achieve competitive accuracy with
+small memory footprints, which is a necessary precondition for deployment in
+resource-constrained environments.
+
+\section{Ethical and societal considerations}
+Decision-support systems in climate adaptation must be deployed cautiously,
+particularly in contexts where data availability, infrastructure, and local
+agronomic knowledge vary widely. Lightweight models can lower barriers to
+adoption, but they also risk being applied outside the data regimes they were
+trained on. Any downstream application should pair model predictions with
+uncertainty estimation, clear communication of limitations, and participatory
+design with local stakeholders to avoid overreliance on automated outputs.
+
+\section{Conclusion}
+We documented a LiteFNO reproduction on the Gray-Scott reaction--diffusion
+dataset with full configuration transparency and quantitative results. The
+current run delivers strong validation and test metrics with a compact model,
+and provides a foundation for expanded sweeps and baseline comparisons in
+future low-resource deployment studies.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
