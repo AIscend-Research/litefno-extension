@@ -345,7 +345,14 @@ FNOS_CKPT = None   # optional: set to a checkpoint path string to include FNO-S 
 P(("md", "## Download + preprocess GS test split"))
 P(("code", """from litefno.download import download_dataset
 from litefno.preprocess import preprocess_well_split
+import glob as _g
+# Prefer a mounted preprocessed test.h5 (matches Phase 2's training distribution -> fair eval).
+_test_hits = sorted(_g.glob("/kaggle/input/**/test.h5", recursive=True))
 DATA_OK = TEST_H5.exists()
+if _test_hits and not DATA_OK:
+    TEST_H5 = Path(_test_hits[0])
+    print("Using mounted test set (matches Phase 2 training regimes):", TEST_H5)
+    DATA_OK = True
 if not DATA_OK:
     try:
         RAW.mkdir(parents=True, exist_ok=True)
@@ -595,7 +602,10 @@ if ARMS:
     for name, m in ARMS.items():
         devs = ["cpu"] + (["cuda"] if torch.cuda.is_available() else [])
         for dn in devs:
-            r = bench_model(m, dn)
+            try:
+                r = bench_model(m, dn)
+            except Exception as e:
+                print(f"  benchmark {name}/{dn} skipped: {e}"); continue
             for x in r: x["arm"] = name
             rows += r
             d = [x for x in r if x["device"] == dn]
