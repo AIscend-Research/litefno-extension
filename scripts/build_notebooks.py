@@ -116,6 +116,9 @@ from litefno.preprocess import preprocess_well_split
 torch.manual_seed(1337); np.random.seed(1337)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device:", DEVICE)
+if DEVICE.type != "cuda":
+    print("WARNING: no GPU detected -> enable Settings > Accelerator > GPU, "
+          "otherwise training is far too slow. (CPU is fine only for a quick smoke test.)")
 
 OUT = Path("/kaggle/working/extensions") if Path("/kaggle/working").exists() else Path("extensions_out")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -123,7 +126,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 # --- Gray-Scott config (matches the repo's GS preprocessing) ---
 DATASET="gray_scott_reaction_diffusion"; KEY="data"; FIELDS=2
 DOWNSAMPLE=4; MAX_TRAJ=1000; MAX_STEPS=60; SEED=0
-RAW=Path("data/raw/gs_ext"); PROC=Path("data/processed/gs_ext")
+RAW=Path("/kaggle/temp/gs_raw") if Path("/kaggle").exists() else Path("data/raw/gs_ext"); PROC=Path("data/processed/gs_ext")
 
 # --- training protocol (matched to the repo CNN runs for a fair comparison) ---
 WIDTH=64; LAYERS=8; RANK=0.5; FACT="cp"
@@ -131,13 +134,18 @@ EPOCHS=200; BATCH=64; LR=1e-3; LR_STEP=100; LR_GAMMA=0.5
 # (paper-faithful would be EPOCHS=500 + a transduction stage; see note at end)"""))
 
 M(("md", "## Download + preprocess Gray-Scott (train / valid / test)"))
-M(("code", """for split in ["train", "valid", "test"]:
+M(("code", """RAW.mkdir(parents=True, exist_ok=True)
+for split in ["train", "valid", "test"]:
     out_h5 = PROC / f"{split}.h5"
     if out_h5.exists():
         continue
     download_dataset(DATASET, split, RAW)
     PROC.mkdir(parents=True, exist_ok=True)
     preprocess_well_split(RAW, out_h5, DATASET, split, KEY, DOWNSAMPLE, MAX_TRAJ, MAX_STEPS, random_seed=SEED)
+    import shutil  # free disk immediately: raw split is ~19.5 GB, processed is tiny
+    raw_split = RAW / "datasets" / DATASET / "data" / split
+    if raw_split.exists():
+        shutil.rmtree(raw_split); print(f"  freed raw '{split}'")
 
 def make_loader(split, bs, shuffle):
     cfg = DatasetConfig(path=PROC / f"{split}.h5", dataset_key=KEY,
@@ -304,7 +312,7 @@ print("device:", DEVICE, "| out:", OUT.resolve())
 
 DATASET="gray_scott_reaction_diffusion"; KEY="data"; FIELDS=2
 DOWNSAMPLE=4; MAX_TRAJ=1000; MAX_STEPS=60; SEED=0
-RAW=Path("data/raw/gs_ext"); PROC=Path("data/processed/gs_ext"); TEST_H5=PROC/"test.h5"
+RAW=Path("/kaggle/temp/gs_raw") if Path("/kaggle").exists() else Path("data/raw/gs_ext"); PROC=Path("data/processed/gs_ext"); TEST_H5=PROC/"test.h5"
 
 CNN_CKPT  = Path("outputs/checkpoints/gray_scott_reaction_diffusion/litefno/best.pt")
 # Point these at mounted Kaggle inputs after Phase 2 (edit as needed):
@@ -317,9 +325,13 @@ from litefno.preprocess import preprocess_well_split
 DATA_OK = TEST_H5.exists()
 if not DATA_OK:
     try:
+        RAW.mkdir(parents=True, exist_ok=True)
         download_dataset(DATASET, "test", RAW)
         PROC.mkdir(parents=True, exist_ok=True)
         preprocess_well_split(RAW, TEST_H5, DATASET, "test", KEY, DOWNSAMPLE, MAX_TRAJ, MAX_STEPS, random_seed=SEED)
+        import shutil
+        raw_split = RAW / "datasets" / DATASET / "data" / "test"
+        if raw_split.exists(): shutil.rmtree(raw_split)
         DATA_OK = True
     except Exception as e:
         print("!! GS test download/preprocess failed:", repr(e)); DATA_OK = False
