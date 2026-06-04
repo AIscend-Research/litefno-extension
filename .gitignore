@@ -23,4 +23,8 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Local data bundles / artifacts (don't commit large processed or zip files)
 gs-processed.zip
+gs-processed/
+all_images.zip
