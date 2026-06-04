@@ -195,7 +195,7 @@ M(("code", """def to_xy(batch):
     xb, yb = batch                     # (B,1,H,W,2)
     return flatten_time(xb).to(DEVICE), flatten_time(yb).to(DEVICE)  # (B,2,H,W)
 
-scaler = torch.amp.GradScaler("cuda") if DEVICE.type == "cuda" else None
+scaler = None  # AMP GradScaler doesn't support the FNO's ComplexFloat spectral weights -> train in fp32
 
 def train_epoch(opt):
     model.train(); tot = 0.0
