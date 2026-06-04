@@ -137,14 +137,19 @@ RAW=Path("/kaggle/temp/gs_raw") if Path("/kaggle").exists() else Path("data/raw/
 PROC_INPUT = Path("/kaggle/input/gs-processed")
 
 # --- training protocol (matched to the repo CNN runs for a fair comparison) ---
-WIDTH=64; LAYERS=8; RANK=0.5; FACT="cp"
+WIDTH=64; LAYERS=8; RANK=0.02; FACT="cp"  # rank 0.02 -> ~180K params (matches paper LiteFNO ~187K); 0.5 would be ~2.5M
 EPOCHS=200; BATCH=64; LR=1e-3; LR_STEP=100; LR_GAMMA=0.5
 # (paper-faithful would be EPOCHS=500 + a transduction stage; see note at end)"""))
 
 M(("md", "## Download + preprocess Gray-Scott (train / valid / test)"))
-M(("code", """if (PROC_INPUT / "train.h5").exists():
+M(("code", """import glob as _glob
+_hits = sorted(_glob.glob("/kaggle/input/**/train.h5", recursive=True))
+if (PROC_INPUT / "train.h5").exists():
     PROC = PROC_INPUT
     print("Using PRE-UPLOADED processed data:", PROC, "(skipping download)")
+elif _hits:
+    PROC = Path(_hits[0]).parent
+    print("Auto-found pre-uploaded data under /kaggle/input:", PROC, "(skipping download)")
 else:
     print("No pre-uploaded data found; downloading raw from The Well (large).")
     RAW.mkdir(parents=True, exist_ok=True)
