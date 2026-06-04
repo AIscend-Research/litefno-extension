@@ -115,10 +115,15 @@ from litefno.preprocess import preprocess_well_split
 
 torch.manual_seed(1337); np.random.seed(1337)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if DEVICE.type == "cuda":   # P100 (sm_60) is incompatible with new torch; verify it works
+    try:
+        _ = (torch.zeros(1, device=DEVICE) + 1).item()
+    except Exception as e:
+        print("CUDA unusable (use T4, not P100):", e); DEVICE = torch.device("cpu")
 print("device:", DEVICE)
 if DEVICE.type != "cuda":
-    print("WARNING: no GPU detected -> enable Settings > Accelerator > GPU, "
-          "otherwise training is far too slow. (CPU is fine only for a quick smoke test.)")
+    print("WARNING: not on GPU -> use Settings > Accelerator > GPU T4 x2 (NOT P100), "
+          "otherwise training is far too slow.")
 
 OUT = Path("/kaggle/working/extensions") if Path("/kaggle/working").exists() else Path("extensions_out")
 OUT.mkdir(parents=True, exist_ok=True)
@@ -127,6 +132,9 @@ OUT.mkdir(parents=True, exist_ok=True)
 DATASET="gray_scott_reaction_diffusion"; KEY="data"; FIELDS=2
 DOWNSAMPLE=4; MAX_TRAJ=1000; MAX_STEPS=60; SEED=0
 RAW=Path("/kaggle/temp/gs_raw") if Path("/kaggle").exists() else Path("data/raw/gs_ext"); PROC=Path("data/processed/gs_ext")
+# If you uploaded the preprocessed train/valid/test.h5 as a Kaggle Dataset, set this
+# to its mount path; Phase 2 will use it and SKIP the 19.5 GB download entirely.
+PROC_INPUT = Path("/kaggle/input/gs-processed")
 
 # --- training protocol (matched to the repo CNN runs for a fair comparison) ---
 WIDTH=64; LAYERS=8; RANK=0.5; FACT="cp"
@@ -134,18 +142,23 @@ EPOCHS=200; BATCH=64; LR=1e-3; LR_STEP=100; LR_GAMMA=0.5
 # (paper-faithful would be EPOCHS=500 + a transduction stage; see note at end)"""))
 
 M(("md", "## Download + preprocess Gray-Scott (train / valid / test)"))
-M(("code", """RAW.mkdir(parents=True, exist_ok=True)
-for split in ["train", "valid", "test"]:
-    out_h5 = PROC / f"{split}.h5"
-    if out_h5.exists():
-        continue
-    download_dataset(DATASET, split, RAW)
-    PROC.mkdir(parents=True, exist_ok=True)
-    preprocess_well_split(RAW, out_h5, DATASET, split, KEY, DOWNSAMPLE, MAX_TRAJ, MAX_STEPS, random_seed=SEED)
-    import shutil  # free disk immediately: raw split is ~19.5 GB, processed is tiny
-    raw_split = RAW / "datasets" / DATASET / "data" / split
-    if raw_split.exists():
-        shutil.rmtree(raw_split); print(f"  freed raw '{split}'")
+M(("code", """if (PROC_INPUT / "train.h5").exists():
+    PROC = PROC_INPUT
+    print("Using PRE-UPLOADED processed data:", PROC, "(skipping download)")
+else:
+    print("No pre-uploaded data found; downloading raw from The Well (large).")
+    RAW.mkdir(parents=True, exist_ok=True)
+    for split in ["train", "valid", "test"]:
+        out_h5 = PROC / f"{split}.h5"
+        if out_h5.exists():
+            continue
+        download_dataset(DATASET, split, RAW)
+        PROC.mkdir(parents=True, exist_ok=True)
+        preprocess_well_split(RAW, out_h5, DATASET, split, KEY, DOWNSAMPLE, MAX_TRAJ, MAX_STEPS, random_seed=SEED)
+        import shutil  # free disk immediately: raw split is ~19.5 GB, processed is tiny
+        raw_split = RAW / "datasets" / DATASET / "data" / split
+        if raw_split.exists():
+            shutil.rmtree(raw_split); print(f"  freed raw '{split}'")
 
 def make_loader(split, bs, shuffle):
     cfg = DatasetConfig(path=PROC / f"{split}.h5", dataset_key=KEY,
