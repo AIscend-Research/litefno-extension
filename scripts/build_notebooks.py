@@ -260,7 +260,7 @@ torch.save({"epoch": EPOCHS, "model_state": model.state_dict(), "build": BUILD},
 print("saved checkpoints to", OUT)"""))
 
 M(("md", "## Test evaluation"))
-M(("code", """ck = torch.load(OUT / "litefno_real_best.pt", map_location=DEVICE)
+M(("code", """ck = torch.load(OUT / "litefno_real_best.pt", map_location=DEVICE, weights_only=False)
 model.load_state_dict(ck["model_state"]); model.to(DEVICE)
 te_r, te_v = eval_loader(test_loader)
 print(f"REAL LiteFNO  test RMSE={te_r:.6f}  test VRMSE={te_v:.6f}  params={PARAMS:,}  factorization={KIND}")
@@ -381,7 +381,7 @@ if DATA_OK:
 
     # Real spectral LiteFNO arm (Phase 2)
     if REAL_CKPT.exists():
-        ck = torch.load(REAL_CKPT, map_location=DEVICE); b = ck["build"]
+        ck = torch.load(REAL_CKPT, map_location=DEVICE, weights_only=False); b = ck["build"]
         m, _ = build_real_litefno(b["in_ch"], b["out_ch"], b["modes"], b["width"], b["layers"], b["rank"], b["factorization"])
         m.load_state_dict(ck["model_state"]); m.to(DEVICE).eval()
         ARMS["litefno_real"] = m; PARAMS["litefno_real"] = sum(p.numel() for p in m.parameters())
