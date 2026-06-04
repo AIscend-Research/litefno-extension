@@ -306,6 +306,11 @@ import matplotlib.pyplot as plt
 
 torch.manual_seed(0); np.random.seed(0)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if DEVICE.type == "cuda":   # some Kaggle GPUs (P100, sm_60) are incompatible with new torch
+    try:
+        _ = (torch.zeros(1, device=DEVICE) + 1).item()
+    except Exception as e:
+        print("CUDA unusable, falling back to CPU:", e); DEVICE = torch.device("cpu")
 OUT = Path("/kaggle/working/extensions") if Path("/kaggle/working").exists() else Path("extensions_out")
 OUT.mkdir(parents=True, exist_ok=True)
 print("device:", DEVICE, "| out:", OUT.resolve())
@@ -317,7 +322,7 @@ RAW=Path("/kaggle/temp/gs_raw") if Path("/kaggle").exists() else Path("data/raw/
 CNN_CKPT  = Path("outputs/checkpoints/gray_scott_reaction_diffusion/litefno/best.pt")
 # Point these at mounted Kaggle inputs after Phase 2 (edit as needed):
 REAL_CKPT = Path("/kaggle/input/phase2-output/litefno_real_best.pt")
-FNOS_CKPT = Path("")   # optional"""))
+FNOS_CKPT = None   # optional: set to a checkpoint path string to include FNO-S in figures"""))
 
 P(("md", "## Download + preprocess GS test split"))
 P(("code", """from litefno.download import download_dataset
@@ -364,7 +369,7 @@ if DATA_OK:
         ARMS["litefno_real"] = m; PARAMS["litefno_real"] = sum(p.numel() for p in m.parameters())
 
     # Optional FNO-S arm
-    if str(FNOS_CKPT) and FNOS_CKPT.exists():
+    if FNOS_CKPT and Path(FNOS_CKPT).exists():
         m = build_model({"name": "fno_s", "layers": 8, "width": 64, "modes": 12}, FIELDS, FIELDS)
         load_checkpoint(FNOS_CKPT, m, device=DEVICE); m.to(DEVICE).eval()
         ARMS["fno_s"] = m; PARAMS["fno_s"] = count_parameters(m)
