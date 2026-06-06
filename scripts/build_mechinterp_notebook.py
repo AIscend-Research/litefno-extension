@@ -66,6 +66,7 @@ from pathlib import Path
 import numpy as np, torch, h5py
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from litefno.metrics import vrmse, window_vrmse
+from litefno.train import build_model
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if DEVICE.type == "cuda":
@@ -95,7 +96,20 @@ print(f"loaded LiteFNO: factorization={kind}, params={PARAMS:,}, modes={b['modes
 
 with h5py.File(TEST_H5, "r") as f: TEST = f[KEY][...].astype(np.float32)
 H, W = TEST.shape[2], TEST.shape[3]
-print("test:", TEST.shape)''')
+print("test:", TEST.shape)
+
+# Matched CNN checkpoint (trained on the SAME gs-processed data -> fair comparison).
+cnns = (sorted(glob.glob("/kaggle/input/**/cnn_baseline*.pt", recursive=True))
+        or sorted(glob.glob("/kaggle/input/**/cnn_*.pt", recursive=True)))
+CNN = None
+if cnns:
+    CNN = build_model({"name": "litefno", "layers": 8, "width": 64, "rank": 32}, FIELDS, FIELDS)
+    st = torch.load(cnns[0], map_location=DEVICE, weights_only=False)
+    CNN.load_state_dict(st["model_state"]); CNN.to(DEVICE).eval()
+    print("loaded matched CNN:", cnns[0])
+else:
+    print("No CNN checkpoint mounted -> comparative cell will be skipped (mount cnn_baseline_seed0.pt).")''')
+
 
 md("## Eval helpers")
 code('''@torch.no_grad()
@@ -126,7 +140,24 @@ def rollout(m, data, steps=30, bs=256):
     def win(a, b):
         a, b = min(a, steps), min(b, steps)
         return float("nan") if b <= a else window_vrmse(preds, gt, a, b, time_dim=1).item()
-    return per, win(6, 12), win(13, 30)''')
+    return per, win(6, 12), win(13, 30)
+
+@torch.no_grad()
+def rollout_full(m, data, steps, bs=256):       # returns (preds, gt)
+    N, S = data.shape[0], data.shape[1]; steps = min(steps, S - 1)
+    preds = torch.empty((N, steps) + tuple(data.shape[2:]), dtype=torch.float32)
+    init = torch.from_numpy(data[:, 0]).float()
+    for i in range(0, N, bs):
+        s = init[i:i+bs].to(DEVICE)
+        for kk in range(steps):
+            s = step_predict(m, s); preds[i:i+bs, kk] = s.cpu()
+    return preds, torch.from_numpy(data[:, 1:steps + 1]).float()
+
+def radial_psd(field):                          # (B,H,W) -> 1D radial power
+    F = np.fft.fftshift(np.fft.fft2(field, axes=(1, 2)), axes=(1, 2))
+    P = (np.abs(F) ** 2).mean(0); h, w = P.shape
+    yy, xx = np.indices((h, w)); r = np.sqrt((yy - h/2) ** 2 + (xx - w/2) ** 2).astype(int)
+    return np.bincount(r.ravel(), P.ravel()) / np.maximum(np.bincount(r.ravel()), 1)''')
 
 md("""## (1) Dead-mode analysis
 
@@ -232,6 +263,48 @@ ax.set_xlabel("rollout step"); ax.set_ylabel("VRMSE")
 ax.set_title(f"Full-model rollout (6:12={w612:.3f}, 13:30={w1330:.3f})")
 fig.tight_layout(); fig.savefig(OUT / "rollout_curve.png", dpi=150); plt.close(fig)
 print("saved rollout_curve.{csv,png}")''')
+
+md("""## (5) Comparative spectral drift — the "why LiteFNO beats the CNN" figure
+
+Roll out **both** the CNN and LiteFNO and track, per step, the predicted
+high-wavenumber energy relative to ground truth. If the CNN's high-freq energy
+ratio drifts away from 1 (over-smooths or blows up) while LiteFNO stays near 1,
+that mechanistically explains LiteFNO's rollout advantage — and connects to the
+mode-ablation (LiteFNO leans on the rollout-critical low modes).""")
+code('''if CNN is not None:
+    STEPS = min(30, TEST.shape[1] - 1)
+    pr_lf, gt = rollout_full(model, TEST, STEPS)
+    pr_cnn, _ = rollout_full(CNN, TEST, STEPS)
+
+    def per_vrmse(pr): return [vrmse(pr[:, k], gt[:, k]).item() for k in range(STEPS)]
+    def per_hf(pr):
+        out = []
+        for k in range(STEPS):
+            ps_p = radial_psd(pr[:, k, ..., 0].numpy()); ps_t = radial_psd(gt[:, k, ..., 0].numpy())
+            kk = np.arange(1, len(ps_t)); hi = kk[len(kk)//2:]
+            out.append(float(ps_p[hi].sum() / (ps_t[hi].sum() + 1e-12)))
+        return out
+
+    v_lf, v_cnn = per_vrmse(pr_lf), per_vrmse(pr_cnn)
+    hf_lf, hf_cnn = per_hf(pr_lf), per_hf(pr_cnn)
+
+    with open(OUT / "spectral_drift.csv", "w", newline="") as f:
+        w = csv.writer(f); w.writerow(["step", "vrmse_cnn", "vrmse_litefno", "hf_ratio_cnn", "hf_ratio_litefno"])
+        for k in range(STEPS): w.writerow([k + 1, v_cnn[k], v_lf[k], hf_cnn[k], hf_lf[k]])
+
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4))
+    s = range(1, STEPS + 1)
+    ax[0].plot(s, v_cnn, "o-", ms=3, label="CNN"); ax[0].plot(s, v_lf, "s-", ms=3, label="LiteFNO")
+    ax[0].set_xlabel("rollout step"); ax[0].set_ylabel("VRMSE"); ax[0].set_title("Rollout error"); ax[0].legend()
+    ax[1].axhline(1.0, ls="--", color="k", lw=0.8, label="ground truth")
+    ax[1].plot(s, hf_cnn, "o-", ms=3, label="CNN"); ax[1].plot(s, hf_lf, "s-", ms=3, label="LiteFNO")
+    ax[1].set_xlabel("rollout step"); ax[1].set_ylabel("high-freq energy / truth")
+    ax[1].set_title("Spectral drift under rollout"); ax[1].legend()
+    fig.tight_layout(); fig.savefig(OUT / "spectral_drift.png", dpi=150); plt.close(fig)
+    print("saved spectral_drift.{csv,png}")
+    print(f"final-step high-freq ratio  CNN={hf_cnn[-1]:.3f}  LiteFNO={hf_lf[-1]:.3f}  (1.0 = matches truth)")
+else:
+    print("CNN not mounted - skipped comparative spectral drift.")''')
 
 md("## GO / NO-GO verdict")
 code('''print("THESIS CHECKLIST (eyeball these):")
