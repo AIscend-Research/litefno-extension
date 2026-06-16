@@ -2,6 +2,26 @@
 
 Reproduction and extensions for the Lightweight Fourier Neural Operator (LITEFNO) paper, with an emphasis on low-resource deployment.
 
+## Repository layout
+
+```
+src/litefno/      Python package (models, training, metrics, data, preprocessing)
+scripts/          CLI helpers + Kaggle notebook builders (build_*_notebook.py)
+notebooks/        Generated Kaggle notebooks (phase2, phase3, headline_3seed,
+                  mechinterp_3seed, spectral_regularizer)
+configs/          YAML configs — datasets/ and experiments/
+data/             Gray-Scott data (processed/ + raw/; not in git → Zenodo)
+figures/          ALL figures — extensions/ mechinterp/ headline/ reproduction/
+results/          Numeric outputs — checkpoints/ seeds/ mechinterp/ extensions/ logs/
+tests/            pytest suite
+docs/             Documentation + reproducibility notes
+```
+
+The authoritative seed-robust results are in `results/seeds/` (3-seed headline) and
+`results/mechinterp/` (3-seed dead-mode / CP-rank / ablation); their figures are in
+`figures/headline/` and `figures/mechinterp/`. Checkpoints (`results/checkpoints/`)
+and data (`data/`) are git-ignored and distributed via Zenodo.
+
 ## Documentation
 
 - [Project overview](docs/overview.md)
