@@ -68,6 +68,25 @@ the-well-download --help
 The downloader pulls files from HuggingFace; if a dataset is gated, log in once
 with `huggingface-cli login` before running `litefno download`.
 
+## Data & checkpoints (Zenodo)
+
+Preprocessed Gray-Scott data and trained checkpoints (matched CNN + 3-seed
+CP-factorized spectral LiteFNO) are archived on Zenodo:
+
+**DOI: [10.5281/zenodo.20718092](https://doi.org/10.5281/zenodo.20718092)** (CC BY 4.0)
+
+This is the fast path to reproduce the results without re-downloading the 44 GB
+raw dataset from The Well. Download `litefno-repro-data.zip`, then:
+
+```bash
+unzip litefno-repro-data.zip
+cp -R litefno-repro-data/data/processed/*        data/processed/
+cp    litefno-repro-data/checkpoints/*.pt        results/checkpoints/
+```
+
+You can then run the notebooks / `litefno test` directly. To regenerate the
+processed data from scratch instead, use the download + preprocess steps below.
+
 ## Data (quickstart)
 
 The project expects The Well datasets as HDF5 with shape `(n_traj, n_steps, H, W, fields)`.
