@@ -32,7 +32,7 @@ REPO = "litefno-repro"
 if not os.path.isdir(REPO):
     subprocess.run(["git", "clone", "--depth", "1",
                     "https://github.com/AIscend-Research/litefno-repro"], check=True)
-sys.path.insert(0, os.path.abspath(REPO))   # import litefno without pip (deps already on Kaggle)
+sys.path.insert(0, os.path.join(os.path.abspath(REPO), "src"))   # import litefno without pip (deps already on Kaggle)
 
 import json, time, glob, copy, csv
 from pathlib import Path

@@ -49,7 +49,7 @@ REPO = "litefno-repro"
 if not os.path.isdir(REPO):
     subprocess.run(["git", "clone", "--depth", "1",
                     "https://github.com/AIscend-Research/litefno-repro"], check=True)
-sys.path.insert(0, os.path.abspath(REPO))
+sys.path.insert(0, os.path.join(os.path.abspath(REPO), "src"))
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "neuraloperator"], check=False)
 
 import json, glob, time, csv
