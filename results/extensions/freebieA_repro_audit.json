@@ -1,0 +1,5 @@
+{
+  "paper_litefno_architecture": "spectral FFT + CP low-rank + transduction",
+  "repo_litefno_class_is_spectral": false,
+  "repo_fno_s_class_is_spectral": true
+}

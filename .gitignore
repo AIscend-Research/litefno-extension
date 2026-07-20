@@ -5,21 +5,22 @@ __pycache__/
 .venv/
 .env
 
-# Data and outputs
+# Data (kept locally / uploaded to Zenodo, not in git)
 /data/raw/*
 !/data/raw/.gitkeep
 /data/processed/*
 !/data/processed/.gitkeep
-/outputs/*
-!/outputs/checkpoints/.gitkeep
-!/outputs/logs/.gitkeep
 
-# Model artifacts
+# Model artifacts (checkpoints live in results/checkpoints/ locally; upload to Zenodo)
 *.pt
 *.pth
 *.ckpt
 *.h5
 *.hdf5
 
-# OS
+# OS / build
 .DS_Store
+*.egg-info/
+
+# Local zip bundles
+*.zip
