@@ -70,7 +70,7 @@ keywords:
 # Code
 code:
   - url: https://github.com/AIscend-Research/litefno-repro
-  - doi: 10.5281/zenodo.20793536   # ← Update with your actual Zenodo DOI
+  - doi: 10.5281/zenodo.20793536
 
 # Data (remove or leave empty if you don't have a separate dataset DOI)
 data: []

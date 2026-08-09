@@ -18,7 +18,7 @@ def load_run(path: Path) -> tuple[int, float, int] | None:
     """Return (params, test_vrmse, rank) for a single sweep run, or None.
 
     The trailing record (written by ``test_at_end``) carries ``test_vrmse``
-    but not ``params`` — pull params from any earlier training-step record.
+    but not ``params``; pull params from any earlier training-step record.
     """
     params = None
     test_vrmse = None
