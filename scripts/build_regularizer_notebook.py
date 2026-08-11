@@ -1,4 +1,4 @@
-"""Builds notebooks/spectral_regularizer.ipynb — the spectral-consistency
+"""Builds notebooks/spectral_regularizer.ipynb: the spectral-consistency
 regularizer experiment (CNN with vs without the loss, multi-seed) on Gray-Scott.
 
 Run: python scripts/build_regularizer_notebook.py
@@ -24,7 +24,7 @@ It trains the CNN **with vs. without** the regularizer across several seeds and
 reports: one-step VRMSE, a high-wavenumber PSD error metric, the predicted-vs-true
 energy spectrum, and (near-free bonus) autoregressive rollout windows.
 
-**Setup:** Add Input → your `gs-processed` dataset (train/valid/test.h5).
+**Setup:** Add Input -> your `gs-processed` dataset (train/valid/test.h5).
 Accelerator = **GPU T4**. Internet ON (for the one-time git clone).""")
 
 code('''import os, subprocess, sys

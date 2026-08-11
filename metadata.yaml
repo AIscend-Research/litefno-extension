@@ -70,7 +70,7 @@ keywords:
 # Code
 code:
   - url: https://github.com/AIscend-Research/litefno-repro
-  - doi: 10.5281/zenodo.20793536   # ← Update with your actual Zenodo DOI
+  - doi: 10.5281/zenodo.20793536
 
 # Data (remove or leave empty if you don't have a separate dataset DOI)
 data: []
@@ -78,7 +78,8 @@ data: []
 # Original paper being reproduced
 replication:
   - cite: "Ahn, D., Chandran, S., Leibovici, D., Kovachki, N., Papalexakis, E. E., & Kossaifi, J. (2025). Lightweight Fourier neural operator for time-dependent partial differential equations. In Machine Learning and the Physical Sciences Workshop (ML4PS), NeurIPS 2025."
-  - doi:
+  - doi: null   # non-archival workshop; no DOI assigned
+  - url: "https://ml4physicalsciences.github.io/2025/files/NeurIPS_ML4PS_2025_287.pdf"
 
 # Abstract
 abstract: "We study LiteFNO (Ahn et al., 2025), a lightweight Fourier Neural Operator for time-dependent PDEs, through a from-scratch reproducibility study and a novel ablation study. We reimplement the architecture (no public code was available) and introduce a parameter-matched low-rank CNN baseline absent from the original paper. Across three random seeds on the Gray-Scott dataset at 32×32 resolution, the CNN matches or outperforms LiteFNO on one-step VRMSE and autoregressive rollout, providing no consistent evidence for a Fourier inductive bias advantage at this scale. We confirm the 'compact beats dense' claim while documenting implementation ambiguities."

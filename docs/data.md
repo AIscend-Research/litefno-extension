@@ -23,7 +23,7 @@ The raw data are HDF5 arrays with shape:
 (n_traj, n_steps, H, W, fields)
 ```
 
-The pipeline down-samples spatially, caps the number of trajectories, and caps the time dimension to match the paper’s preprocessing.
+The pipeline down-samples spatially, caps the number of trajectories, and caps the time dimension to match the paper's preprocessing.
 
 ## Download
 
@@ -49,7 +49,7 @@ Preprocessing applies:
 - `max_trajectories`: random sample cap on the number of trajectories (paper:
   ≤1000).
 - `random_seed`: optional seed to make the trajectory sampling reproducible.
-- `max_steps`: cap on time steps (paper: 30–60, dataset-dependent).
+- `max_steps`: cap on time steps (paper: 30-60, dataset-dependent).
 
 ## Common download pattern
 
