@@ -337,13 +337,20 @@ def band_metrics(power: np.ndarray) -> dict:
 # --------------------------------------------------------------------------
 
 
-def open_remote(repo: str, path: str):
+def open_remote(repo: str, path: str, block_size: int = 2 ** 23):
+    """Open a Well HDF5 file over HTTP range requests.
+
+    ``block_size`` is the fsspec read-ahead unit and must match the access
+    pattern. Reading whole trajectories wants a large block; picking scattered
+    single frames out of a 65 MB contiguous trajectory wants a small one, or
+    every 65 KB frame drags a full block across the wire.
+    """
     import fsspec
     import h5py
     from huggingface_hub import hf_hub_url
 
     url = hf_hub_url(repo, path, repo_type="dataset")
-    fs = fsspec.filesystem("http", block_size=2 ** 23)
+    fs = fsspec.filesystem("http", block_size=block_size)
     return h5py.File(fs.open(url, "rb"), "r")
 
 

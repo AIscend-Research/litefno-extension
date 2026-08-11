@@ -27,3 +27,10 @@ The extension phase focuses on low-resource deployment and accessibility.
   red-noise drift), that the 60-step training window is too short to resolve
   either of them, and that maze/spots hold under 2% of their spatial variance
   below mode 8 while spirals holds 77%.
+- [Field recovery under thin sensor coverage](data_sparsity.md) — the same six
+  scenarios masked to four low-resource sampling regimes (random pixels, a
+  regular lattice, swath-shaped block gaps, a few point stations). Sampling
+  geometry dominates density: a lattice at 5% coverage beats i.i.d. random
+  sampling at the same density by 3-5x and clustered coverage by more than 10x,
+  which is worse than predicting the mean at any density below 25%. Confirms the
+  harmonic-content prediction at Spearman rho = -1.000.
