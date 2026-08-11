@@ -1,0 +1,43 @@
+model:
+  name: litefno
+  layers: 8
+  width: 64
+  rank: 32
+dataset:
+  name: gray_scott_proxy
+  processed_dir: data/processed/gray_scott_proxy
+  splits:
+  - train
+  - valid
+  - test
+  dataset_key: data
+  input_steps: 1
+  output_steps: 1
+  fields: 2
+  stride: 1
+  cache: memory
+training:
+  epochs: 50
+  batch_size: 512
+  lr: 0.001
+  lr_step: 100
+  lr_gamma: 0.5
+  device: mps
+  seed: 1337
+  deterministic: false
+  eval_every: 1
+  eval_splits:
+  - train
+  - valid
+  eval_windows: []
+  test_at_end: true
+  checkpoint_dir: experiments/baseline/litefno_w64_r32_s1337/checkpoints
+  checkpoint_every: 0
+  checkpoint_best_metric: valid_vrmse
+  resume_from: null
+  num_workers: 0
+  pin_memory: false
+  amp: false
+  cudnn_benchmark: false
+logging:
+  metrics_path: experiments/baseline/litefno_w64_r32_s1337/metrics.jsonl

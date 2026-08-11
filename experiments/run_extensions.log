@@ -1,0 +1,2 @@
+
+=== [1/10] baseline/litefno_w64_r32_s1337 model={'name': 'litefno', 'layers': 8, 'width': 64, 'rank': 32} epochs=50 ===
