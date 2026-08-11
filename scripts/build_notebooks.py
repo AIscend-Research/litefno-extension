@@ -70,20 +70,20 @@ def make_notebook(cells):
 
 
 # ===========================================================================
-# PHASE 2 — train the real spectral LiteFNO
+# PHASE 2: train the real spectral LiteFNO
 # ===========================================================================
 phase2 = []
 M = phase2.append
 
-M(("md", """# Phase 2 — Train the REAL spectral LiteFNO (Gray-Scott)
+M(("md", """# Phase 2: Train the REAL spectral LiteFNO (Gray-Scott)
 
-This notebook implements the **actual** LiteFNO architecture the paper describes
-— a **CP-factorized spectral FNO** (via `neuraloperator`) — and trains it on
+This notebook implements the **actual** LiteFNO architecture the paper describes:
+a **CP-factorized spectral FNO** (via `neuraloperator`), and trains it on
 Gray-Scott. The repo's existing `LiteFNO` class is a CNN and is *not* used here.
 
 Output (for Phase 3):
-- `litefno_real_best.pt` / `litefno_real_last.pt` — checkpoints
-- `gray_scott_litefno_real.jsonl` — per-epoch metrics
+- `litefno_real_best.pt` / `litefno_real_last.pt`: checkpoints
+- `gray_scott_litefno_real.jsonl`: per-epoch metrics
 
 **After it finishes**, save the notebook so `/kaggle/working/extensions/` becomes
 the notebook output, then in Phase 3 add this notebook's output as an input
@@ -221,7 +221,7 @@ def eval_loader(loader):
         rs.append(rmse(p, y).item()); vs.append(vrmse(p, y).item())
     return float(np.mean(rs)), float(np.mean(vs))"""))
 
-M(("md", "## Timing check (3 epochs) — estimate full run before committing"))
+M(("md", "## Timing check (3 epochs): estimate full run before committing"))
 M(("code", """opt = torch.optim.AdamW(model.parameters(), lr=LR)
 t0 = time.time()
 for _ in range(3):
@@ -282,18 +282,18 @@ M(("md", """## Handoff to Phase 3 + notes
 
 
 # ===========================================================================
-# PHASE 3 — extensions across all available arms
+# PHASE 3: extensions across all available arms
 # ===========================================================================
 phase3 = []
 P = phase3.append
 
-P(("md", """# Phase 3 — Extensions across arms (Gray-Scott)
+P(("md", """# Phase 3: Extensions across arms (Gray-Scott)
 
 Loads every arm that's available and runs all extensions on each, with
 comparison plots:
-- **CNN** ("LiteFNO" class in the repo) — from the committed checkpoint (always)
-- **Real LiteFNO** — from Phase 2's `litefno_real_best.pt` (if mounted)
-- **FNO-S** — optional; only if you point `FNOS_CKPT` at one
+- **CNN** ("LiteFNO" class in the repo): from the committed checkpoint (always)
+- **Real LiteFNO**: from Phase 2's `litefno_real_best.pt` (if mounted)
+- **FNO-S**: optional; only if you point `FNOS_CKPT` at one
 
 Checkpoint-based extensions: sanity, quantization, noise robustness,
 autoregressive rollout (+windowed VRMSE), input spectral sensitivity, energy
@@ -425,7 +425,7 @@ def savecsv(name, rows):
     with open(OUT / name, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys())); w.writeheader(); w.writerows(rows)"""))
 
-P(("md", "## Extension 1 — Sanity check (per arm)"))
+P(("md", "## Extension 1: Sanity check (per arm)"))
 P(("code", """if ARMS:
     rows = []
     for name, m in ARMS.items():
@@ -434,7 +434,7 @@ P(("code", """if ARMS:
         print(f"{name:>13}: RMSE={r:.5f}  VRMSE={v:.5f}  params={PARAMS[name]:,}")
     savecsv("ext1_sanity.csv", rows)"""))
 
-P(("md", "## Extension 2 — Precision / quantization sweep (per arm)"))
+P(("md", "## Extension 2: Precision / quantization sweep (per arm)"))
 P(("code", """def q_real(w, bits):
     if bits == 16: return w.half().float()
     qmax = 2 ** (bits - 1) - 1; s = w.abs().max() / qmax
@@ -467,7 +467,7 @@ if ARMS:
     fig.tight_layout(); fig.savefig(OUT / "ext2_quantization.png", dpi=150); plt.close(fig)
     print("saved ext2_quantization.{csv,png}")"""))
 
-P(("md", "## Extension 3 — Gaussian-noise robustness (per arm)"))
+P(("md", "## Extension 3: Gaussian-noise robustness (per arm)"))
 P(("code", """if ARMS:
     rng = np.random.default_rng(0)
     def noisy(snr):
@@ -488,7 +488,7 @@ P(("code", """if ARMS:
     fig.tight_layout(); fig.savefig(OUT / "ext3_noise.png", dpi=150); plt.close(fig)
     print("saved ext3_noise.{csv,png}")"""))
 
-P(("md", "## Extension 4 — Autoregressive rollout + windowed VRMSE (per arm)"))
+P(("md", "## Extension 4: Autoregressive rollout + windowed VRMSE (per arm)"))
 P(("code", """@torch.no_grad()
 def rollout(m, data, steps, bs=256):
     N, S = data.shape[0], data.shape[1]; steps = min(steps, S - 1)
@@ -520,7 +520,7 @@ if ARMS:
     fig.tight_layout(); fig.savefig(OUT / "ext4_rollout.png", dpi=150); plt.close(fig)
     print("saved ext4_rollout.{csv,png}, ext4_windows.csv")"""))
 
-P(("md", "## Extension 5 — Input spectral sensitivity (per arm)"))
+P(("md", "## Extension 5: Input spectral sensitivity (per arm)"))
 P(("code", """if ARMS:
     yy, xx = np.ogrid[:H, :W]; cy, cx = H / 2.0, W / 2.0
     rr = np.sqrt(((yy - cy) / cy) ** 2 + ((xx - cx) / cx) ** 2)
@@ -543,7 +543,7 @@ P(("code", """if ARMS:
     fig.tight_layout(); fig.savefig(OUT / "ext5_spectral_sensitivity.png", dpi=150); plt.close(fig)
     print("saved ext5_spectral_sensitivity.{csv,png}")"""))
 
-P(("md", "## Extension 6 — Energy spectrum (per arm vs truth)"))
+P(("md", "## Extension 6: Energy spectrum (per arm vs truth)"))
 P(("code", """def radial_psd(field):
     F = np.fft.fftshift(np.fft.fft2(field, axes=(1, 2)), axes=(1, 2))
     Pw = (np.abs(F) ** 2).mean(0); h, w = Pw.shape
@@ -565,7 +565,7 @@ if ARMS:
     fig.tight_layout(); fig.savefig(OUT / "ext6_energy_spectrum.png", dpi=150); plt.close(fig)
     print("saved ext6_energy_spectrum.{csv,png}")"""))
 
-P(("md", "## Extension 7 — Spatial error maps (per arm)"))
+P(("md", "## Extension 7: Spatial error maps (per arm)"))
 P(("code", """if ARMS:
     t_show = min(10, TEST.shape[1] - 2); n_arm = len(ARMS)
     fig, axes = plt.subplots(n_arm, 3, figsize=(9, 3 * n_arm), squeeze=False)
@@ -582,7 +582,7 @@ P(("code", """if ARMS:
     fig.tight_layout(); fig.savefig(OUT / "ext7_error_maps.png", dpi=150); plt.close(fig)
     print("saved ext7_error_maps.png")"""))
 
-P(("md", "## Extension 8 — Inference benchmark (per arm, CPU + GPU)"))
+P(("md", "## Extension 8: Inference benchmark (per arm, CPU + GPU)"))
 P(("code", """def bench_model(m, devname, bs_list=(1, 4, 16, 64), reps=20):
     dev = torch.device(devname); m = m.to(dev).eval(); res = []
     with torch.no_grad():

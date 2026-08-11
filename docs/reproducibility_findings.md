@@ -17,11 +17,11 @@ statements here concern only our own reimplementation.
 
 Two model classes exist in the repo:
 
-- **FNO-S** ([../litefno/models/fno_s.py](../litefno/models/fno_s.py)) — a
+- **FNO-S** ([../src/litefno/models/fno_s.py](../src/litefno/models/fno_s.py)): a
   genuine spectral FNO (uses `torch.fft.rfft2`, complex spectral weights, mode
   truncation). This baseline is implemented.
 
-- **`LiteFNO`** ([../litefno/models/litefno.py](../litefno/models/litefno.py)) —
+- **`LiteFNO`** ([../src/litefno/models/litefno.py](../src/litefno/models/litefno.py)):
   currently a **low-rank CNN placeholder** (1x1/3x3 `Conv2d` + GELU bottlenecks).
   It does **not** yet implement the paper's three core components:
   1. spectral convolution (FFT),
@@ -29,7 +29,7 @@ Two model classes exist in the repo:
   3. transduction (spatial -> spatio-temporal fine-tuning).
 
   This is an **incomplete part of our reimplementation**, not a finding about
-  anyone else's code. All metrics in [../outputs/logs/](../outputs/logs/) and the
+  anyone else's code. All metrics in [../results/logs/](../results/logs/) and the
   committed checkpoints were produced by this CNN placeholder, so they do **not**
   yet constitute a reproduction of LiteFNO's architecture or claims.
 
@@ -39,7 +39,7 @@ To make this a genuine reproduction (or a documented partial/negative result),
 we must implement the real architecture and compare to the paper's claims:
 
 - Implement the real **CP-factorized spectral LiteFNO** (planned via the
-  `neuraloperator` library) — `notebooks/phase2_train_real_litefno.ipynb`.
+  `neuraloperator` library): `notebooks/phase2_train_real_litefno.ipynb`.
 - Optionally add the **transduction** stage (LiteFNO's central novelty).
 - Compare, under a documented protocol, against:
   - the **paper's reported numbers** (Tables 6/7), and

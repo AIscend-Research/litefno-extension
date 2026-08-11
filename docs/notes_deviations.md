@@ -10,7 +10,7 @@ folds into low frequencies (aliasing). Since FNO learns by manipulating Fourier
 modes, aliased input directly corrupts the input distribution the model is
 trained on.
 
-**Expected behavior:** Block-mean averaging — reshape into (factor x factor)
+**Expected behavior:** Block-mean averaging: reshape into (factor x factor)
 blocks and take the mean. Standard practice in FNO literature for downsampling
 discrete fields before spectral methods.
 
@@ -32,7 +32,7 @@ with 200 trajectories per regime. Taking the first 1000 likely excludes one
 entire regime. Training distribution will be missing a chunk of the parameter
 space the paper trained on.
 
-**Impact (other datasets):** TBD per dataset — depends on whether trajectories
+**Impact (other datasets):** TBD per dataset; depends on whether trajectories
 in the source HDF5s are ordered by any meaningful property.
 
 **Fix applied:** Randomly sample trajectories (optionally seeded for reproducibility).
@@ -49,4 +49,4 @@ in the source HDF5s are ordered by any meaningful property.
 - Optimizer settings match the paper: AdamW with `lr=1e-3` and a step LR schedule
   every 100 epochs (`gamma=0.5`).
 - Training length matches the paper default: `epochs=500`.
-- Evaluation windows align with reported VRMSE windows: `6–12` and `13–30`.
+- Evaluation windows align with reported VRMSE windows: `6-12` and `13-30`.

@@ -34,7 +34,7 @@ Makes the paper's headline rigorous: retrain a parameter-matched **CNN** and a
 **spectral LiteFNO** on the matched Gray-Scott data across **3 seeds**, then report
 with **mean ± std**:
 - autoregressive **rollout VRMSE** (CNN vs LiteFNO)
-- **spectral drift** (predicted high-freq energy / truth) over rollout — the
+- **spectral drift** (predicted high-freq energy / truth) over rollout, the
   "opposite failure modes" finding (CNN over-smooths, LiteFNO over-sharpens)
 - one-step VRMSE + windowed rollout VRMSE (6:12, 13:30)
 

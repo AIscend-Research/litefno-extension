@@ -1,4 +1,4 @@
-"""Builds notebooks/mechinterp_3seed.ipynb — mechanistic-interpretability of the
+"""Builds notebooks/mechinterp_3seed.ipynb: mechanistic-interpretability of the
 spectral LiteFNO across 3 seeds, with error bands:
   (1) dead-mode analysis (per-Fourier-mode weight magnitude, mean +/- std),
   (2) CP-rank utilization (effective rank, mean +/- std),
@@ -35,12 +35,12 @@ md(r"""# Mechanistic interpretability of spectral LiteFNO (3 seeds)
 
 Runs the mech-interp analyses across **all 3 LiteFNO seeds** with **error bands**,
 so the findings are seed-robust:
-1. **Dead-mode analysis** — per-Fourier-mode weight magnitude (mean ± std).
-2. **CP-rank utilization** — effective rank of the factorization (mean ± std).
-3. **Causal mode ablation** — keep only the lowest-f fraction of modes; one-step
+1. **Dead-mode analysis**: per-Fourier-mode weight magnitude (mean ± std).
+2. **CP-rank utilization**: effective rank of the factorization (mean ± std).
+3. **Causal mode ablation**: keep only the lowest-f fraction of modes; one-step
    VRMSE + rollout windows (mean ± std).
 
-**Setup — attach two datasets via Add Input:**
+**Setup: attach two datasets via Add Input**
 - your **LiteFNO seed checkpoints** (`litefno_seed0.pt`, `litefno_seed1.pt`, `litefno_seed2.pt`)
 - **gs-processed** (for `test.h5`)
 
