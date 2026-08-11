@@ -124,6 +124,73 @@ def analyse_zonal(series: np.ndarray, order: int) -> dict:
             "nearest": nearest}
 
 
+def build_gray_scott_cache(cache: Path, settled_from: int = 500,
+                           n_steps: int = 501) -> dict:
+    """Settled-segment field of each Gray-Scott regime, one trajectory each.
+
+    Streamed from The Well as a single contiguous read per regime (~33 MB), the
+    same access pattern stream_preprocess uses. Only the settled half is taken:
+    ext10 showed the first half is the one-time pattern-formation transient, and
+    fitting poles to a ramp measures the ramp.
+    """
+    if cache.exists():
+        with np.load(cache) as z:
+            return {k: z[k] for k in z.files}
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "harmonic_content", Path(__file__).resolve().parent / "harmonic_content.py")
+    hc = importlib.util.module_from_spec(spec)
+    sys.modules["harmonic_content"] = hc
+    spec.loader.exec_module(hc)
+
+    import os
+    ca = hc._certifi_path()
+    if ca:
+        os.environ.setdefault("SSL_CERT_FILE", ca)
+
+    fam = hc.FAMILIES["gray_scott"]
+    out = {}
+    for regime, path in fam.scenarios.items():
+        h5 = hc.open_remote(fam.repo, path, block_size=2 ** 22)
+        try:
+            block = np.asarray(
+                h5["t0_fields/A"][0, settled_from:settled_from + n_steps])
+        finally:
+            h5.close()
+        out[regime] = block.astype(np.float32)
+        print(f"    fetched {regime} {block.shape}", flush=True)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(cache, **out)
+    return out
+
+
+def analyse_gray_scott(cache: dict, max_mode: int, order: int) -> list[dict]:
+    """Pole analysis of each regime's most energetic spatial mode.
+
+    Reported with ``sigma_reliable``, which is the point: these are
+    self-organised patterns whose phase wanders, so the constant-frequency model
+    does not hold and the fit over-damps. The flag says so instead of the table
+    quietly contradicting ext10.
+    """
+    from litefno.poles import analyse_series, spatial_mode_series
+    rows = []
+    for regime, field in sorted(cache.items()):
+        series, radii = spatial_mode_series(field.astype(np.float64), max_mode)
+        weights = (np.abs(series) ** 2).sum(axis=0)
+        i = int(np.argmax(weights[1:])) + 1              # skip the DC mode
+        got = analyse_series(series[:, i], order=order)
+        rows.append({
+            "regime": regime, "k": int(radii[i]), "n_time": field.shape[0],
+            "order": order,
+            "oscillatory_share": got["oscillatory_share"],
+            "transient_share": got["transient_share"],
+            "dominant_period": got["dominant_period"],
+            "fit_sigma": got["fit_sigma"],
+            "envelope_sigma": got["envelope_sigma"],
+            "sigma_reliable": got["sigma_reliable"]})
+    return rows
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", type=Path,
@@ -133,6 +200,10 @@ def main() -> None:
     ap.add_argument("--max-zonal", type=int, default=4)
     ap.add_argument("--band", default="tropics", choices=sorted(BANDS))
     ap.add_argument("--out-dir", type=Path, default=Path("results/extensions"))
+    ap.add_argument("--gray-scott", action="store_true",
+                    help="also analyse Gray-Scott, where the model does not hold")
+    ap.add_argument("--gs-cache", type=Path,
+                    default=Path("data/processed/gs_poles_cache.npz"))
     args = ap.parse_args()
 
     if not args.cache.exists():
@@ -204,6 +275,32 @@ def main() -> None:
     print("    ext12 measured the annual with an FFT, which needs only that the")
     print("    period divide the record. This is a limit of pole fitting, not a")
     print("    statement about the physics.")
+
+    if args.gray_scott:
+        print("\n=== Gray-Scott settled segments (self-organised, not forced) ===")
+        gs = build_gray_scott_cache(args.gs_cache)
+        gs_rows = analyse_gray_scott(gs, args.max_zonal + 2, args.order)
+        print(f"    {'regime':>9} {'k':>3} {'osc':>7} {'dom period':>11} "
+              f"{'fit sigma':>10} {'env sigma':>10} {'reliable':>9}")
+        for r in gs_rows:
+            print(f"    {r['regime']:>9} {r['k']:>3} "
+                  f"{r['oscillatory_share']:>6.1%} {r['dominant_period']:>11.2f} "
+                  f"{r['fit_sigma']:>+10.5f} {r['envelope_sigma']:>+10.5f} "
+                  f"{str(r['sigma_reliable']):>9}")
+        n_bad = sum(1 for r in gs_rows if not r["sigma_reliable"])
+        print(f"\n    {n_bad}/{len(gs_rows)} regimes flagged unreliable: the fit "
+              f"reports strong damping while the")
+        print("    envelope is flat, which is model mismatch rather than physics. "
+              "ext10 found a")
+        print("    line at period 45.5 in spirals, so a bare '0% oscillatory' "
+              "here would be wrong.")
+        args.out_dir.mkdir(parents=True, exist_ok=True)
+        path = args.out_dir / "ext18_pole_gray_scott.csv"
+        with path.open("w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(gs_rows[0]))
+            w.writeheader()
+            w.writerows(gs_rows)
+        print(f"wrote {path}")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     for name, rows_out in (("ext17_pole_zonal", records),
