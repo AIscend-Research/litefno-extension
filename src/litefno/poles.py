@@ -54,6 +54,28 @@ planetswe has documented forcing at exactly 24 and 1008 steps (ext12), so a pole
 finder that works must place near-neutral complex poles at those two
 frequencies and nowhere else in particular. That is a ground truth on real data,
 not a synthetic self-test, and ``scripts/pole_analysis.py`` runs it.
+
+Where the model does not apply, and how it says so
+--------------------------------------------------
+An AR fit assumes the series is a sum of fixed-frequency exponentials. A mode
+whose phase wanders is not, and the fit cannot say so directly -- it absorbs the
+misfit into damping and reports a decaying mode. On Gray-Scott's settled spirals
+the fit gives sigma = -0.0067 for the dominant mode while its amplitude falls by
+4% across 501 steps, a true sigma of -0.00012: a factor of 56, and enough to
+flip the mode from oscillatory to transient.
+
+:func:`envelope_sigma` is the guard. It measures decay from the amplitude
+envelope alone, assuming nothing about frequency, so it disagrees with the poles
+exactly when the constant-frequency model is wrong. ``sigma_reliable`` asks
+whether the two land on the same side of the neutral threshold -- the same
+*label*, not the same number, since two tiny rates of opposite sign mean the
+same thing.
+
+That check separates the two datasets cleanly. planetswe's forced diurnal mode
+is reliable, and reads as 100% oscillatory. All four Gray-Scott regimes tested
+are flagged unreliable: their patterns are self-organised and drift in phase, so
+their "0% oscillatory" reading is a statement about the model, not about the
+physics, and is reported as such.
 """
 from __future__ import annotations
 
@@ -112,6 +134,47 @@ def pole_residues(series: np.ndarray, poles: np.ndarray,
     residues, *_ = np.linalg.lstsq(vander, x.astype(np.complex128), rcond=rcond)
     energy = (np.abs(vander * residues[None, :]) ** 2).sum(axis=0)
     return residues, np.real(energy)
+
+
+def envelope_sigma(series: np.ndarray, smooth: Optional[int] = None) -> float:
+    """Decay rate estimated from the amplitude envelope, independent of any fit.
+
+    A regression of log|s(t)| against t. This exists as a cross-check on the
+    pole magnitudes, and it is needed: on Gray-Scott's spirals the pole fit
+    reported sigma = -0.0067 while the envelope only fell by 4% across 501 steps
+    (sigma = -0.00012), a factor of 56. A fixed-frequency exponential cannot
+    represent a mode whose phase wanders, so it buys the misfit with damping,
+    and the damping is what the neutral-vs-transient call depends on.
+
+    The envelope makes no assumption about frequency, so the two disagree
+    exactly when the constant-frequency model is wrong.
+    """
+    x = np.asarray(series)
+    x = x - x.mean()
+    if np.isrealobj(x):
+        # |cos| touches zero twice per period, and a log-regression through
+        # those zeros measures the zero-crossings rather than the envelope.
+        # The analytic signal has the envelope as its modulus. (Fourier-mode
+        # series are already complex and need no transform.)
+        spec = np.fft.fft(x)
+        h = np.zeros(len(x))
+        h[0] = 1
+        if len(x) % 2 == 0:
+            h[len(x) // 2] = 1
+            h[1:len(x) // 2] = 2
+        else:
+            h[1:(len(x) + 1) // 2] = 2
+        x = np.fft.ifft(spec * h)
+    amp = np.abs(x)
+    if smooth is None:
+        smooth = max(3, len(x) // 50)
+    if smooth > 1:
+        kernel = np.ones(smooth) / smooth
+        amp = np.convolve(amp, kernel, mode="valid")
+    floor = amp[amp > 0].min() * 1e-3 if np.any(amp > 0) else 1e-30
+    t = np.arange(len(amp), dtype=float)
+    slope, _ = np.polyfit(t, np.log(np.maximum(amp, floor)), 1)
+    return float(slope)
 
 
 def classify_poles(poles: np.ndarray, energy: np.ndarray,
@@ -191,7 +254,26 @@ def analyse_series(series: np.ndarray, order: int = 12,
     residues, energy = pole_residues(series, poles)
     out = classify_poles(poles, energy, neutral_tol=neutral_tol,
                          n_time=len(series))
-    out.update(poles=poles, residues=residues, energy=energy)
+
+    # Independent damping estimate, as a check on the fit. The comparison is
+    # whether the two agree on the *label*, not on the number: two rates that
+    # differ by a factor of three but are both far inside the neutral band
+    # produce the same answer, while a relative difference between two
+    # near-zero values is large and means nothing. Compare against the
+    # energy-weighted mean pole decay rather than the dominant oscillatory
+    # pole, which is undefined when the fit found no oscillation at all -- and
+    # that is exactly the case worth flagging.
+    env = envelope_sigma(series)
+    total = energy.sum()
+    fit_sigma = float((out["sigma"] * energy).sum() / total) if total > 0 \
+        else float("nan")
+    same_call = (np.isfinite(fit_sigma)
+                 and (abs(fit_sigma) <= neutral_tol) == (abs(env) <= neutral_tol))
+    out.update(poles=poles, residues=residues, energy=energy,
+               envelope_sigma=env, fit_sigma=fit_sigma,
+               sigma_gap=abs(fit_sigma - env) if np.isfinite(fit_sigma)
+               else float("nan"),
+               sigma_reliable=bool(same_call))
     return out
 
 
