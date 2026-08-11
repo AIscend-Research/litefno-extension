@@ -36,6 +36,7 @@ and data (`data/`) are git-ignored and distributed via Zenodo.
 - [Harmonic content by scenario](docs/harmonic_content.md)
 - [Field recovery under thin sensor coverage](docs/data_sparsity.md)
 - [Forced harmonics: is a temporal prior worth it?](docs/forced_harmonics.md)
+- [In-distribution reference number for LiteFNO](docs/baseline_reference.md)
 
 ## Setup (quickstart)
 
