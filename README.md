@@ -35,6 +35,7 @@ and data (`data/`) are git-ignored and distributed via Zenodo.
 - [Extensions roadmap](docs/extensions.md)
 - [Harmonic content by scenario](docs/harmonic_content.md)
 - [Field recovery under thin sensor coverage](docs/data_sparsity.md)
+- [Forced harmonics: is a temporal prior worth it?](docs/forced_harmonics.md)
 
 ## Setup (quickstart)
 

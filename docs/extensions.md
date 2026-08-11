@@ -34,3 +34,11 @@ The extension phase focuses on low-resource deployment and accessibility.
   sampling at the same density by 3-5x and clustered coverage by more than 10x,
   which is worse than predicting the mean at any density below 25%. Confirms the
   harmonic-content prediction at Spearman rho = -1.000.
+- [Forced harmonics: is a temporal prior worth it?](forced_harmonics.md) — the
+  temporal version of the harmonic claim, tested on planetswe, whose daily
+  (24-step) and annual (1008-step) forcing periods are documented rather than
+  inferred. The forcing is unambiguous (phase-locked at 0.995-1.000 across four
+  independent trajectories, enriched >700x over chance) but accounts for only
+  5.4% of temporal variance globally and 11.5% in the best latitude band. The
+  temporal prior survives where the spatial one did not, as a real but minor
+  effect.
