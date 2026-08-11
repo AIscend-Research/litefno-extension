@@ -1,0 +1,2 @@
+arm,seed,factorization,params,epochs,train_s,onestep_test_vrmse,onestep_valid_vrmse,roll_6_12,roll_13_30
+litefno,0,cp,179666,200,3862.2,0.00953298807144165,0.010352921672165394,0.21379604935646057,0.4779356122016907
