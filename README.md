@@ -43,6 +43,7 @@ The authoritative seed-robust numbers are in `results/seeds/` (3-seed headline)
 and `results/mechinterp/` (3-seed dead-mode, CP-rank, mode ablation), with
 figures in `figures/headline/` and `figures/mechinterp/`. Checkpoints and data
 are git-ignored and distributed via Zenodo.
+- [In-distribution reference number for LiteFNO](docs/baseline_reference.md)
 
 ## Install
 

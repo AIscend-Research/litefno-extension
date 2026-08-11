@@ -42,3 +42,14 @@ The extension phase focuses on low-resource deployment and accessibility.
   5.4% of temporal variance globally and 11.5% in the best latitude band. The
   temporal prior survives where the spatial one did not, as a real but minor
   effect.
+
+## Baseline
+
+- [In-distribution reference number for LiteFNO](baseline_reference.md) — the
+  number the extensions are implicitly compared against, as a runnable command
+  rather than a one-off notebook. Trains the real CP-factorized spectral model
+  alongside FNO-S and the repo's low-rank CNN under one protocol, and checks the
+  result against the committed Kaggle run. Also adds
+  `scripts/stream_preprocess.py`, which builds the processed splits from The
+  Well over HTTP range requests instead of downloading 44 GB to throw 99% of it
+  away.
