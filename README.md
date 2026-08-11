@@ -33,6 +33,7 @@ and data (`data/`) are git-ignored and distributed via Zenodo.
 - [Configuration reference](docs/configs.md)
 - [Metrics](docs/metrics.md)
 - [Extensions roadmap](docs/extensions.md)
+- [Harmonic content by scenario](docs/harmonic_content.md)
 
 ## Setup (quickstart)
 
