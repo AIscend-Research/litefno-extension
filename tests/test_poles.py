@@ -221,3 +221,66 @@ def test_analyse_field_skips_negligible_modes():
     assert all(g["energy_weight"] >= 1e-3 for g in got)
     dc = [g for g in got if g["k"] == 0][0]
     assert dc["dominant_period"] == pytest.approx(20.0, rel=1e-2)
+
+
+# --------------------------------------------------------------------------
+# the envelope cross-check
+# --------------------------------------------------------------------------
+
+
+def test_envelope_is_accurate_near_neutrality_where_it_is_needed():
+    """Accurate for slow decay; biased low for fast decay, which is harmless.
+
+    The envelope exists to check whether a mode is near-neutral. Measured over
+    a 400-step record: 1% error at sigma=-0.001 and 1.4% at -0.005, rising to
+    34% at -0.02 where the smoothing window spans a large fraction of an
+    e-folding. That bias cannot change a label -- -0.013 and -0.020 are both far
+    outside any neutral band -- so it is bounded loosely here rather than tuned
+    away.
+    """
+    from litefno.poles import envelope_sigma
+    for tau, tol in ((1000.0, 0.05), (200.0, 0.05)):
+        x = np.cos(2 * np.pi * T / 20) * np.exp(-T / tau)
+        assert envelope_sigma(x) == pytest.approx(-1 / tau, rel=tol)
+    fast = np.cos(2 * np.pi * T / 20) * np.exp(-T / 50.0)
+    assert -0.03 < envelope_sigma(fast) < -0.005      # right order, still damped
+
+
+def test_envelope_is_flat_for_a_sustained_oscillation():
+    from litefno.poles import envelope_sigma
+    assert abs(envelope_sigma(np.cos(2 * np.pi * T / 20))) < 1e-4
+
+
+def test_reliable_when_the_model_fits():
+    """Clean damped and undamped oscillations: both estimates agree."""
+    for x in (np.cos(2 * np.pi * T / 20),
+              np.cos(2 * np.pi * T / 20) * np.exp(-T / 200)):
+        got = analyse_series(x, order=12)
+        assert got["sigma_reliable"] is True
+
+
+def test_unreliable_when_the_phase_wanders():
+    """A constant-frequency model cannot represent phase wander.
+
+    It buys the misfit with damping, so the fit reports a strongly decaying
+    mode while the envelope is flat -- which is what happens on Gray-Scott's
+    self-organised patterns, and why their 'not oscillatory' verdict must be
+    reported as unreliable rather than as a finding about the physics.
+    """
+    rng = np.random.default_rng(3)
+    n = 500
+    t = np.arange(n)
+    phase = np.cumsum(rng.normal(scale=0.25, size=n))   # random-walk phase
+    x = np.cos(2 * np.pi * t / 20 + phase)              # amplitude stays 1
+    got = analyse_series(x, order=16)
+    from litefno.poles import envelope_sigma
+    assert abs(envelope_sigma(x)) < 2e-3                # envelope really is flat
+    assert got["fit_sigma"] < -5e-3                     # the fit says otherwise
+    assert got["sigma_reliable"] is False
+
+
+def test_reliability_compares_labels_not_magnitudes():
+    """Two tiny rates of opposite sign are the same call, not a disagreement."""
+    x = np.cos(2 * np.pi * T / 20) * np.exp(-T / 100000)
+    got = analyse_series(x, order=12)
+    assert got["sigma_reliable"] is True
