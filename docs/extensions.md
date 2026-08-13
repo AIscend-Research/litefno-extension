@@ -64,8 +64,14 @@ empirical transfer function and extracting pole structure from them.
   weights and one frame separates the worse half of 20 held-out regimes at
   AUC 0.983.
 - [Do the resonant factors carry across regimes?](mode_transplant.md) (ext21,
-  H2) -- step 5. Four arms at matched component counts, plus the principal-angle
-  overlap matrix between spectral bases learned on different regimes.
+  H2) -- step 5. No: 0 of 8 (target, budget) cells put the resonant transplant
+  ahead of the size-matched damped control. The overlap matrix says why, and it
+  needed the same-regime different-seed pair to say it: two models trained on the
+  *same* regime share no more spectral basis (0.258) than models trained on
+  different ones (0.230-0.283), so the CP mode basis is set by initialization
+  rather than physics and there is no identifiable subspace to move. Transfer
+  itself is real and large -- full fine-tuning beats scratch by a factor of six
+  at the smallest budget -- but it does not decompose.
 
 ## Baseline
 
