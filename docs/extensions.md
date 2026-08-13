@@ -73,6 +73,22 @@ empirical transfer function and extracting pole structure from them.
   itself is real and large -- full fine-tuning beats scratch by a factor of six
   at the smallest budget -- but it does not decompose.
 
+## Downstream: what the surrogate's error costs a decision
+
+- [What does a surrogate's error cost a fair decision?](fair_allocation.md)
+  (ext22, H3) -- a fairness-aware resource allocation layer over the
+  reconstructed ecosystem state, scored on realised welfare rather than on field
+  error. Sensitivity to surrogate error is U-shaped in the fairness parameter
+  with an exact zero at the envy-free point, so max-efficiency and max-min are
+  both fragile and the fair middle is not; the closed-form law predicts a
+  trained operator's realised decision cost to within 1%. The auxiliary network
+  is 4-6x worse than pooling the field and applying the closed form when the
+  surrogate is good, and 9.3x better when it is starved -- because it reads the
+  region populations out of the field better than a block mean does, which two
+  interpretable controls (a fitted shrinkage, a box blur) fail to reproduce.
+  Acting on an 8-step-stale observation is worse than ignoring the state
+  entirely.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the

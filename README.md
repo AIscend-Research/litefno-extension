@@ -15,6 +15,15 @@ the network should have learned" is not a matter of opinion. See
 ground-truth check, [docs/resonance_risk.md](docs/resonance_risk.md) for H1, and
 [docs/mode_transplant.md](docs/mode_transplant.md) for H2.
 
+A third question follows from the same testbed: if the surrogate's output is
+used to *decide* something, what does its error cost? ext22 puts a fairness-aware
+resource allocation layer on top of the reconstructed ecosystem state and finds
+that the cost depends on which fairness rule sits downstream, in closed form --
+sensitivity is U-shaped in the fairness parameter with an exact zero at the
+envy-free point, so pure max-efficiency and pure max-min are both fragile and the
+fair middle is not. See
+[docs/fair_allocation.md](docs/fair_allocation.md) for H3.
+
 The reproduction this builds on stands unchanged: on Gray-Scott at 32x32 across
 three seeds, a parameter-matched low-rank CNN matches or outperforms LiteFNO on
 one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
@@ -172,6 +181,15 @@ python3 scripts/mode_transplant.py    # H2
 
 Each takes `--quick` for a plumbing check. All three are self-contained: they
 generate their own PDE testbeds, so they run without The Well data or a GPU.
+
+### Downstream decisions
+
+- [What does a surrogate's error cost a fair decision?](docs/fair_allocation.md)
+  (ext22, H3)
+
+```bash
+python3 scripts/fair_allocation.py    # H3
+```
 
 ### Spectral characterisation of the data
 
