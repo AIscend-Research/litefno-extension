@@ -1,0 +1,17 @@
+arm,target,budget,seed,n_components,test_vrmse,train_s
+scratch,slow_diffuse,2,0,0,0.9660412073135376,0.1
+finetune,slow_diffuse,2,0,0,0.6912232637405396,0.1
+transplant_resonant,slow_diffuse,2,0,3,0.9660126566886902,0.1
+transplant_damped,slow_diffuse,2,0,3,0.9660010933876038,0.1
+scratch,slow_diffuse,8,0,0,0.9228346347808838,0.4
+finetune,slow_diffuse,8,0,0,0.5820847749710083,0.4
+transplant_resonant,slow_diffuse,8,0,3,0.9227756261825562,0.4
+transplant_damped,slow_diffuse,8,0,3,0.9227539896965027,0.4
+scratch,fast_sharp,2,0,0,0.9716606140136719,0.1
+finetune,fast_sharp,2,0,0,0.7241895198822021,0.1
+transplant_resonant,fast_sharp,2,0,3,0.971637487411499,0.1
+transplant_damped,fast_sharp,2,0,3,0.9716305136680603,0.1
+scratch,fast_sharp,8,0,0,0.9336155652999878,0.4
+finetune,fast_sharp,8,0,0,0.6268004775047302,0.4
+transplant_resonant,fast_sharp,8,0,3,0.9335629940032959,0.4
+transplant_damped,fast_sharp,8,0,3,0.9335525035858154,0.4

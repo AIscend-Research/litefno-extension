@@ -1,0 +1,7 @@
+a,b,layer,overlap,min_angle_deg,median_angle_deg
+source_s0,source_s0,0,1.0,0.0,0.0
+source_s0,slow_diffuse_s0,0,0.175,36.82,74.29
+source_s0,fast_sharp_s0,0,0.1723,36.89,76.22
+slow_diffuse_s0,slow_diffuse_s0,0,1.0,0.0,0.0
+slow_diffuse_s0,fast_sharp_s0,0,0.8321,5.03,18.39
+fast_sharp_s0,fast_sharp_s0,0,1.0,0.0,0.0

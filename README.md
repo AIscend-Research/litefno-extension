@@ -1,14 +1,25 @@
-# litefno-repro
+# litefno-extension
 
-A from-scratch reproduction of the Lightweight Fourier Neural Operator (LiteFNO,
-Ahn et al., 2025), plus a parameter-matched low-rank CNN ablation that the
-original paper does not include.
+**SpecScope: what did the operator learn?** An extension of the
+[LiteFNO reproduction](https://github.com/AIscend-Research/litefno-repro) that
+treats a trained Fourier neural operator's spectral weights as an empirical
+transfer function of the system rather than as opaque parameters, extracts their
+pole structure with classical system identification, and asks two questions:
+does that readout predict where the surrogate will fail (H1), and do the learned
+factors transplant across regimes (H2)?
 
-Headline result: on Gray-Scott at 32x32 across three seeds, the CNN baseline
-matches or outperforms LiteFNO on one-step VRMSE and on autoregressive rollout,
-so we find no consistent evidence for a Fourier inductive-bias advantage at this
-scale. See [docs/reproducibility_findings.md](docs/reproducibility_findings.md)
-for the full statement of what is and is not reproduced.
+What makes the answers checkable is the choice of testbed. On an exactly
+solvable oscillatory PDE the per-mode poles are known in closed form, so "what
+the network should have learned" is not a matter of opinion. See
+[docs/operator_poles.md](docs/operator_poles.md) for the extraction and its
+ground-truth check, [docs/resonance_risk.md](docs/resonance_risk.md) for H1, and
+[docs/mode_transplant.md](docs/mode_transplant.md) for H2.
+
+The reproduction this builds on stands unchanged: on Gray-Scott at 32x32 across
+three seeds, a parameter-matched low-rank CNN matches or outperforms LiteFNO on
+one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
+for a Fourier inductive-bias advantage at that scale. See
+[docs/reproducibility_findings.md](docs/reproducibility_findings.md).
 
 ## Repository layout
 
@@ -27,23 +38,10 @@ docs/          Setup, reproduction guide, and reproducibility notes
 `metadata.yaml` and `bibliography.bib` are submission metadata for the
 accompanying write-up; they are not needed to run the code.
 
-- [Project overview](docs/overview.md)
-- [Setup](docs/setup.md)
-- [Data & preprocessing](docs/data.md)
-- [Training & evaluation](docs/training.md)
-- [Reproduction guide](docs/reproduction.md)
-- [Experiments](docs/experiments.md)
-- [Configuration reference](docs/configs.md)
-- [Metrics](docs/metrics.md)
-- [Extensions roadmap](docs/extensions.md)
-- [Harmonic content by scenario](docs/harmonic_content.md)
-- [Field recovery under thin sensor coverage](docs/data_sparsity.md)
-- [Forced harmonics: is a temporal prior worth it?](docs/forced_harmonics.md)
 The authoritative seed-robust numbers are in `results/seeds/` (3-seed headline)
 and `results/mechinterp/` (3-seed dead-mode, CP-rank, mode ablation), with
 figures in `figures/headline/` and `figures/mechinterp/`. Checkpoints and data
 are git-ignored and distributed via Zenodo.
-- [In-distribution reference number for LiteFNO](docs/baseline_reference.md)
 
 ## Install
 
@@ -159,3 +157,25 @@ GitHub Actions runs the same command on pushes and pull requests via
 - [Reproducibility findings](docs/reproducibility_findings.md)
 - [Deviations from the paper](docs/notes_deviations.md)
 - [Extensions roadmap](docs/extensions.md)
+
+### SpecScope
+
+- [Reading the poles out of a trained operator](docs/operator_poles.md) (ext19)
+- [Does the pole readout predict failure?](docs/resonance_risk.md) (ext20, H1)
+- [Do the resonant factors carry across regimes?](docs/mode_transplant.md) (ext21, H2)
+
+```bash
+python3 scripts/operator_poles.py     # extraction + closed-form check
+python3 scripts/resonance_risk.py     # H1
+python3 scripts/mode_transplant.py    # H2
+```
+
+Each takes `--quick` for a plumbing check. All three are self-contained: they
+generate their own PDE testbeds, so they run without The Well data or a GPU.
+
+### Spectral characterisation of the data
+
+- [Harmonic content by scenario](docs/harmonic_content.md)
+- [Field recovery under thin sensor coverage](docs/data_sparsity.md)
+- [Forced harmonics: is a temporal prior worth it?](docs/forced_harmonics.md)
+- [In-distribution reference number for LiteFNO](docs/baseline_reference.md)

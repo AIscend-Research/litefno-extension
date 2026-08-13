@@ -43,6 +43,30 @@ The extension phase focuses on low-resource deployment and accessibility.
   temporal prior survives where the spatial one did not, as a real but minor
   effect.
 
+## SpecScope: interrogating the trained operator
+
+The extension's main line. Everything above characterises the *data*; these ask
+what the trained network learned, by treating its spectral weights as an
+empirical transfer function and extracting pole structure from them.
+
+- [Reading the poles out of a trained operator](operator_poles.md) (ext19) --
+  steps 1-3. Extracts a per-mode propagator from a checkpoint by two independent
+  routes and scores it against systems whose poles are known in closed form. The
+  poles are recovered (rank correlation 0.987, frequency error 1.5e-4), but the
+  near-neutral *label* is below the method's resolution at a tight tolerance, and
+  the linearized composition route is off by a near-constant factor and so is
+  usable for ranking modes but not for an absolute stability call.
+- [Does the pole readout predict failure?](resonance_risk.md) (ext20, H1) --
+  step 4. The strong per-mode form does not survive its control: the raw
+  correlation of -0.78 between pole margin and rollout error growth is matched by
+  a wavenumber-only baseline at +0.78, leaving -0.14 after partialling. The weak
+  per-scenario form does hold: an energy-weighted risk score computed from the
+  weights and one frame separates the worse half of 20 held-out regimes at
+  AUC 0.983.
+- [Do the resonant factors carry across regimes?](mode_transplant.md) (ext21,
+  H2) -- step 5. Four arms at matched component counts, plus the principal-angle
+  overlap matrix between spectral bases learned on different regimes.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the

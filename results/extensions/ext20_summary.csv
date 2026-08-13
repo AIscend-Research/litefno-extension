@@ -1,0 +1,4 @@
+seed,n_modes,mode_spearman_partial_p,scenario_spearman_p,scenario_auc_p,mode_spearman_raw,mode_spearman_partial_k,wavenumber_baseline_spearman,extracted_vs_exact_margin,n_scenarios,scenario_spearman_weighted,scenario_spearman_max,scenario_auc_weighted
+0,63,0.2273863068465767,9.99950002499875e-05,4.999750012499375e-05,-0.8106,-0.1646,0.8052,0.9878,20,0.812,0.0752,0.98
+1,63,0.272863568215892,9.99950002499875e-05,4.999750012499375e-05,-0.794,-0.1449,0.7892,0.9909,20,0.7865,0.2391,0.99
+2,63,0.35732133933033483,0.00044997750112494374,4.999750012499375e-05,-0.7487,-0.1226,0.7443,0.9918,20,0.7233,-0.6827,0.98
