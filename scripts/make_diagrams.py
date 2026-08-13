@@ -53,15 +53,17 @@ def shell_mask(modes1: int, modes2: int, shells, width: float = 0.5) -> np.ndarr
 
 
 def render_mode_shells(out: Path, modes1: int = 12, modes2: int = 12,
-                       fundamental: float = 3.5, n_harmonics: int = 3) -> None:
+                       fundamental: float = 3.5, n_harmonics: int = 2) -> None:
     shells = shell_radii(fundamental, n_harmonics, max_mode=max(modes1, modes2))
     mask, ky, kx = shell_mask(modes1, modes2, shells)
 
     parts: list[str] = []
     add = parts.append
 
+    # Tall enough for the outermost arc, which reaches ORIGIN_Y +/- max(shells)*CELL.
+    reach = max(shells) * CELL
     width_px = ORIGIN_X + modes2 * CELL + 300
-    height_px = 470
+    height_px = int(ORIGIN_Y + reach + 74)
 
     add(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width_px} {height_px}" '
@@ -79,7 +81,10 @@ def render_mode_shells(out: Path, modes1: int = 12, modes2: int = 12,
         r = radius * CELL
         add(f'<path d="M {ORIGIN_X} {ORIGIN_Y - r} A {r} {r} 0 0 1 {ORIGIN_X} {ORIGIN_Y + r}" '
             f'fill="none" stroke="{ACCENT}" stroke-width="1.1" stroke-dasharray="4 4" opacity="0.5"/>')
-        add(f'<text x="{ORIGIN_X + r + 6:.0f}" y="{ORIGIN_Y - 6}" font-size="10.5" '
+        # Label at 45 degrees along the arc: the apex collides with the title,
+        # and the axis crossing collides with the dots.
+        diag = r * 0.7071
+        add(f'<text x="{ORIGIN_X + diag + 9:.0f}" y="{ORIGIN_Y - diag - 7:.0f}" font-size="10.5" '
             f'fill="{ACCENT}" opacity="0.9">|k| = {radius:g}</text>')
 
     # Mode dots.
@@ -99,9 +104,9 @@ def render_mode_shells(out: Path, modes1: int = 12, modes2: int = 12,
         f'x2="{ORIGIN_X}" y2="{axis_bottom:.0f}" stroke="currentColor" stroke-width="1" opacity="0.45"/>')
     add(f'<line x1="{ORIGIN_X - 0.8 * CELL:.0f}" y1="{ORIGIN_Y}" x2="{axis_right:.0f}" '
         f'y2="{ORIGIN_Y}" stroke="currentColor" stroke-width="1" opacity="0.45"/>')
-    add(f'<text x="{axis_right + 8:.0f}" y="{ORIGIN_Y + 4}" font-size="12" opacity="0.7">kₓ</text>')
+    add(f'<text x="{axis_right + 8:.0f}" y="{ORIGIN_Y + 4}" font-size="12" opacity="0.7">k<tspan font-size="9" dy="3">x</tspan></text>')
     add(f'<text x="{ORIGIN_X - 6}" y="{ORIGIN_Y - (ky.max() + 1.1) * CELL:.0f}" '
-        f'font-size="12" opacity="0.7" text-anchor="middle">k_y</text>')
+        f'font-size="12" opacity="0.7" text-anchor="middle">k<tspan font-size="9" dy="3">y</tspan></text>')
 
     # Legend and the claim.
     legend_x = ORIGIN_X + modes2 * CELL + 44
@@ -119,7 +124,7 @@ def render_mode_shells(out: Path, modes1: int = 12, modes2: int = 12,
         "not an orientation, so its energy spreads",
         "around the whole shell. Selecting on |k|",
         "follows the physics; selecting on a single",
-        "(kₓ, k_y) would catch one slice of it.",
+        "orientation would catch one slice of it.",
     ]):
         add(f'<text x="{legend_x}" y="{250 + n * 17}" font-size="11.5" opacity="0.75">{line}</text>')
 
@@ -133,8 +138,9 @@ def render_mode_shells(out: Path, modes1: int = 12, modes2: int = 12,
     ]):
         add(f'<text x="{legend_x}" y="{390 + n * 17}" font-size="11.5" opacity="0.75">{line}</text>')
 
-    add(f'<text x="30" y="{height_px - 12}" font-size="11.5" opacity="0.6">'
-        f'Shells at a fundamental of {fundamental:g} and its multiples, annulus half-width 0.5. '
+    add(f'<text x="30" y="{height_px - 30}" font-size="11.5" opacity="0.6">'
+        f'Shells at a fundamental of {fundamental:g} and its integer multiples, annulus half-width 0.5.</text>')
+    add(f'<text x="30" y="{height_px - 13}" font-size="11.5" opacity="0.6">'
         f'Drawn in centred k_y order; the layer stores the negative half folded to the end.</text>')
 
     add("</g></svg>")

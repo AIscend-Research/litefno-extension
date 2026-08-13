@@ -40,6 +40,13 @@ one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
 for a Fourier inductive-bias advantage at that scale. See
 [docs/reproducibility_findings.md](docs/reproducibility_findings.md).
 
+![The six Gray-Scott regimes](figures/simulations/gs_atlas.png)
+
+The regimes above are re-simulated at 384x384 for legibility; training runs on
+32x32 fields, where they are hard to tell apart by eye. See
+[docs/visuals.md](docs/visuals.md) for how the renders and the method diagrams
+are produced, and for what they are and are not evidence of.
+
 ## Repository layout
 
 ```
@@ -48,7 +55,8 @@ configs/       YAML configs: datasets/ and experiments/
 scripts/       CLI helpers and Kaggle notebook builders (build_*_notebook.py)
 notebooks/     Generated Kaggle notebooks (built by scripts/build_*.py)
 results/       Numeric outputs: seeds/ mechinterp/ extensions/ logs/ checkpoints/
-figures/       Plots: headline/ mechinterp/ extensions/ reproduction/
+figures/       Plots: headline/ mechinterp/ extensions/ reproduction/,
+               plus simulations/ (regime renders) and diagrams/ (method SVGs)
 data/          Gray-Scott data (raw/ and processed/; not in git, see Zenodo)
 tests/         pytest suite
 docs/          Setup, reproduction guide, and reproducibility notes
@@ -210,3 +218,4 @@ python3 scripts/strategic_allocation.py  # H4
 - [Field recovery under thin sensor coverage](docs/data_sparsity.md)
 - [Forced harmonics: is a temporal prior worth it?](docs/forced_harmonics.md)
 - [In-distribution reference number for LiteFNO](docs/baseline_reference.md)
+- [Visuals: regime renders and method diagrams](docs/visuals.md)

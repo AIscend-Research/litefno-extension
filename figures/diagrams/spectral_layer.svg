@@ -10,7 +10,7 @@
 
   <g font-family="ui-sans-serif, system-ui, sans-serif" fill="currentColor">
 
-    <!-- ============ shared path ============ -->
+    <!-- shared path -->
     <text x="30" y="34" font-size="13" font-weight="600" opacity="0.55" letter-spacing="0.08em">SHARED SPECTRAL PATH</text>
 
     <g stroke="currentColor" stroke-width="1.4" fill="none">
@@ -46,14 +46,14 @@
 
     <text x="618" y="120" font-size="11" text-anchor="middle" fill="#d2673a" opacity="0.9">optional · input-independent</text>
 
-    <!-- ============ split down to the two weight stores ============ -->
+    <!-- split down to the two weight stores -->
     <g stroke="#d2673a" stroke-width="1.6" fill="none">
       <path d="M 482 98 L 482 140 L 250 140 L 250 176" marker-end="url(#sl-arrow-accent)"/>
       <path d="M 482 98 L 482 140 L 712 140 L 712 176" marker-end="url(#sl-arrow-accent)"/>
     </g>
     <text x="497" y="136" font-size="12" fill="#d2673a" font-weight="600">W is stored one of two ways</text>
 
-    <!-- ---------- dense ---------- -->
+    <!-- dense -->
     <text x="250" y="200" font-size="14" font-weight="600" text-anchor="middle">Dense — FNO-S</text>
 
     <g stroke="currentColor" stroke-width="1.3" fill="none" opacity="0.9">
@@ -70,7 +70,7 @@
     <text x="250" y="371" font-size="15" text-anchor="middle" font-weight="600">589,824 params</text>
     <text x="250" y="391" font-size="11.5" text-anchor="middle" opacity="0.65">64 · 64 · 12 · 12</text>
 
-    <!-- ---------- CP ---------- -->
+    <!-- CP -->
     <text x="712" y="200" font-size="14" font-weight="600" text-anchor="middle">CP rank R — LiteFNO</text>
 
     <g stroke="currentColor" stroke-width="1.3" fill="none">
@@ -91,7 +91,7 @@
     <text x="712" y="371" font-size="15" text-anchor="middle" font-weight="600" fill="#2f7d63">4,896 params</text>
     <text x="712" y="391" font-size="11.5" text-anchor="middle" opacity="0.65">32 · (64 + 64 + 12 + 12) + 32</text>
 
-    <!-- ---------- the delta ---------- -->
+    <!-- the delta -->
     <text x="481" y="272" font-size="26" text-anchor="middle" opacity="0.35">→</text>
     <text x="481" y="300" font-size="14" text-anchor="middle" font-weight="700" fill="#2f7d63">120× fewer</text>
 
