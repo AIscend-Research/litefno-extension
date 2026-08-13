@@ -58,6 +58,7 @@ class Regime:
     k: float
     steps: int
     blurb: str
+    init: str = "patches"  # "patches" or "front"; see seed_fields
 
 
 # (F, k) per regime, verified alive at Du/Dv = 0.16/0.08 with dt = 1. The
@@ -69,7 +70,8 @@ REGIMES: tuple[Regime, ...] = (
     Regime("bubbles", 0.012, 0.050, 24000, "Rounded cells that inflate and crowd."),
     Regime("maze", 0.029, 0.057, 24000, "Labyrinthine corridors, frozen once formed."),
     Regime("worms", 0.054, 0.063, 20000, "Elongating filaments that branch and merge."),
-    Regime("spirals", 0.018, 0.051, 28000, "Rotating waves -- the one true oscillator."),
+    Regime("spirals", 0.016, 0.049, 26000, "Curling wave tips -- the one true oscillator.",
+           init="front"),
     Regime("spots", 0.030, 0.062, 20000, "Discrete spots that divide and fill space."),
 )
 
@@ -96,14 +98,29 @@ def laplacian(a: np.ndarray) -> np.ndarray:
     )
 
 
-def seed_fields(size: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
-    """u saturated, v empty, perturbed by a handful of random square patches.
+def seed_fields(
+    size: int, rng: np.random.Generator, mode: str = "patches"
+) -> tuple[np.ndarray, np.ndarray]:
+    """Initial condition. u saturated, v seeded, symmetry broken by noise.
 
-    Symmetry has to be broken for spirals and gliders to emerge at all, so the
-    patches get a small amount of additive noise on top of the step.
+    ``patches`` scatters square blobs and suits the pattern-forming regimes,
+    which reach the same attractor from almost any seed.
+
+    ``front`` lays down a stripe of v with its right half cut away. The
+    resulting free wave end is what curls into a spiral tip -- scattered blobs
+    never produce one, because a spiral needs an unterminated front to wrap
+    around. This is the only regime whose appearance depends on the seed.
     """
     u = np.ones((size, size), dtype=np.float64)
     v = np.zeros((size, size), dtype=np.float64)
+
+    if mode == "front":
+        mid = size // 2
+        half = max(4, size // 40)
+        u[mid - half : mid + half, :mid] = 0.25
+        v[mid - half : mid + half, :mid] = 0.50
+        u += 0.01 * rng.standard_normal((size, size))
+        return np.clip(u, 0.0, 1.0), np.clip(v, 0.0, 1.0)
 
     n_patches = max(4, size // 32)
     patch = max(4, size // 24)
@@ -134,7 +151,7 @@ def simulate(
     """
     steps = regime.steps if steps is None else steps
     rng = np.random.default_rng(seed)
-    u, v = seed_fields(size, rng)
+    u, v = seed_fields(size, rng, mode=regime.init)
 
     # Capture on a square-root schedule: pattern formation is fast early and
     # nearly static late, so uniform sampling wastes most of the frames.
@@ -182,6 +199,17 @@ def make_cmap() -> mcolors.LinearSegmentedColormap:
 CMAP = make_cmap()
 
 
+def levels(data: np.ndarray, lo_pct: float = 1.0, hi_pct: float = 99.5) -> tuple[float, float]:
+    """Contrast limits from percentiles rather than min/max.
+
+    Several regimes put almost all of the domain at v ~ 0 and reach their
+    maximum on a handful of pixels, so a min/max stretch renders them nearly
+    black. Clipping the tails is what makes gliders and spirals legible.
+    """
+    lo, hi = np.percentile(data, [lo_pct, hi_pct])
+    return float(lo), float(hi)
+
+
 def normalise(frame: np.ndarray, lo: float, hi: float) -> np.ndarray:
     if hi - lo < 1e-9:
         return np.zeros_like(frame)
@@ -193,7 +221,7 @@ def to_rgb(frame: np.ndarray, lo: float, hi: float) -> np.ndarray:
 
 
 def save_still(frames: np.ndarray, regime: Regime, out: Path) -> None:
-    lo, hi = float(frames[-1].min()), float(frames[-1].max())
+    lo, hi = levels(frames[-1])
     rgb = to_rgb(frames[-1], lo, hi)
     fig, ax = plt.subplots(figsize=(6, 6), dpi=200)
     ax.imshow(rgb, interpolation="lanczos")
@@ -206,8 +234,7 @@ def save_still(frames: np.ndarray, regime: Regime, out: Path) -> None:
 def save_strip(frames: np.ndarray, times: np.ndarray, regime: Regime, out: Path) -> None:
     """Filmstrip: five frames spanning formation, shared colour scale."""
     picks = np.linspace(0, len(frames) - 1, 5).astype(int)
-    lo = float(frames[picks].min())
-    hi = float(frames[picks].max())
+    lo, hi = levels(frames[picks])
 
     fig, axes = plt.subplots(1, 5, figsize=(15, 3.35), dpi=170)
     fig.patch.set_facecolor("#0b0d14")
@@ -226,22 +253,26 @@ def save_strip(frames: np.ndarray, times: np.ndarray, regime: Regime, out: Path)
     plt.close(fig)
 
 
-def save_gif(frames: np.ndarray, out: Path, size: int = 320, fps: int = 12) -> None:
-    """Looping animation. Falls back silently if Pillow is unavailable."""
+def save_gif(frames: np.ndarray, out: Path, size: int = 260, fps: int = 12,
+             colors: int = 64) -> None:
+    """Looping animation. Falls back silently if Pillow is unavailable.
+
+    Kept deliberately small: six of these ship together, and a colormapped
+    field quantises to 64 colours with no visible loss.
+    """
     try:
         from PIL import Image
     except ImportError:  # pragma: no cover - optional dependency
         print(f"  (skipped {out.name}: Pillow not installed)")
         return
 
-    lo = float(frames[len(frames) // 3 :].min())
-    hi = float(frames[len(frames) // 3 :].max())
+    lo, hi = levels(frames[len(frames) // 3 :])
     images = []
     for frame in frames:
         img = Image.fromarray(to_rgb(frame, lo, hi))
         if img.size[0] != size:
             img = img.resize((size, size), Image.LANCZOS)
-        images.append(img.convert("P", palette=Image.ADAPTIVE, colors=128))
+        images.append(img.convert("P", palette=Image.ADAPTIVE, colors=colors))
 
     # Hold the final pattern before looping, otherwise the reset reads as a glitch.
     images[0].save(
@@ -260,7 +291,7 @@ def save_atlas(finals: dict[str, np.ndarray], out: Path) -> None:
     fig.patch.set_facecolor("#0b0d14")
     for ax, regime in zip(axes.ravel(), REGIMES):
         frame = finals[regime.name]
-        lo, hi = float(frame.min()), float(frame.max())
+        lo, hi = levels(frame)
         ax.imshow(to_rgb(frame, lo, hi), interpolation="lanczos")
         ax.set_axis_off()
         ax.set_title(regime.name, color="#e8edf5", fontsize=15, pad=9)
@@ -288,6 +319,27 @@ def save_atlas(finals: dict[str, np.ndarray], out: Path) -> None:
 # --------------------------------------------------------------------------
 # Entry point
 # --------------------------------------------------------------------------
+
+
+def optimise_pngs(out_dir: Path) -> None:
+    """Palette-quantise the written PNGs in place.
+
+    These are colormapped scalar fields, so they carry far fewer than 256
+    distinct colours to begin with; quantising is visually free and cuts the
+    directory by roughly 4x. Six regimes of un-optimised 200-dpi PNG is 40 MB,
+    which is not a thing to put in a git repository.
+    """
+    try:
+        from PIL import Image
+    except ImportError:  # pragma: no cover - optional dependency
+        return
+
+    before = sum(p.stat().st_size for p in out_dir.glob("*.png"))
+    for path in sorted(out_dir.glob("*.png")):
+        img = Image.open(path).convert("RGB")
+        img.convert("P", palette=Image.ADAPTIVE, colors=256).save(path, optimize=True)
+    after = sum(p.stat().st_size for p in out_dir.glob("*.png"))
+    print(f"optimised PNGs: {before / 1e6:.1f} MB -> {after / 1e6:.1f} MB")
 
 
 def main() -> None:
@@ -330,7 +382,8 @@ def main() -> None:
     if len(finals) == len(REGIMES):
         save_atlas(finals, args.out_dir / "gs_atlas.png")
 
-    print(f"\nwrote {len(list(args.out_dir.glob('*')))} files to {args.out_dir}")
+    optimise_pngs(args.out_dir)
+    print(f"wrote {len(list(args.out_dir.glob('*')))} files to {args.out_dir}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" color="#12151c" role="img" aria-label="How the extensions connect: The Well feeds a streaming preprocessor and a CP-factorized spectral operator, whose reconstructed state is read three ways — as poles predicting failure, as factors transplanted across regimes, and as an allocation whose welfare is the real score.">
+  <defs>
+    <marker id="pl-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+    <marker id="pl-arrow-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" opacity="0.45"/>
+    </marker>
+  </defs>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" fill="currentColor">
+
+    <!-- ============ spine ============ -->
+    <text x="34" y="32" font-size="13" font-weight="600" opacity="0.55" letter-spacing="0.08em">THE SPINE</text>
+
+    <g stroke="currentColor" stroke-width="1.5" fill="none">
+      <rect x="34"  y="150" width="128" height="62" rx="6"/>
+      <rect x="212" y="150" width="128" height="62" rx="6"/>
+      <rect x="390" y="150" width="146" height="62" rx="6" stroke-width="2.4"/>
+      <rect x="586" y="150" width="128" height="62" rx="6"/>
+    </g>
+
+    <g text-anchor="middle">
+      <text x="98"  y="177" font-size="13" font-weight="600">The Well</text>
+      <text x="98"  y="195" font-size="10.5" opacity="0.65">Gray-Scott, planetswe</text>
+      <text x="276" y="177" font-size="13" font-weight="600">preprocess</text>
+      <text x="276" y="195" font-size="10.5" opacity="0.65">HTTP range → 32×32</text>
+      <text x="463" y="171" font-size="13" font-weight="600">CP spectral operator</text>
+      <text x="463" y="188" font-size="10.5" opacity="0.65">rfft2 · rank-R weight</text>
+      <text x="463" y="204" font-size="10.5" opacity="0.65">· optional shell bias</text>
+      <text x="650" y="177" font-size="13" font-weight="600">state ĝ</text>
+      <text x="650" y="195" font-size="10.5" opacity="0.65">reconstructed field</text>
+    </g>
+
+    <g stroke="currentColor" stroke-width="1.5" marker-end="url(#pl-arrow)">
+      <line x1="162" y1="181" x2="206" y2="181"/>
+      <line x1="340" y1="181" x2="384" y2="181"/>
+      <line x1="536" y1="181" x2="580" y2="181"/>
+    </g>
+
+    <!-- ============ what measures the data ============ -->
+    <text x="34" y="76" font-size="13" font-weight="600" opacity="0.55" letter-spacing="0.08em">MEASURED BEFORE MODELLING</text>
+
+    <g stroke="currentColor" stroke-width="1.2" fill="none" opacity="0.75" stroke-dasharray="5 3">
+      <rect x="212" y="92" width="128" height="40" rx="5"/>
+      <rect x="390" y="92" width="146" height="40" rx="5"/>
+    </g>
+    <g text-anchor="middle" opacity="0.85">
+      <text x="276" y="110" font-size="11.5" font-weight="600">sparsity masks</text>
+      <text x="276" y="124" font-size="10" opacity="0.7">ext11 · thin coverage</text>
+      <text x="463" y="110" font-size="11.5" font-weight="600">harmonic content</text>
+      <text x="463" y="124" font-size="10" opacity="0.7">ext10, ext12 · where variance sits</text>
+    </g>
+    <g stroke="currentColor" stroke-width="1.2" marker-end="url(#pl-arrow-dim)" opacity="0.5">
+      <line x1="276" y1="132" x2="276" y2="144"/>
+      <line x1="463" y1="132" x2="463" y2="144"/>
+    </g>
+    <text x="548" y="118" font-size="10.5" opacity="0.6">sets the shells</text>
+
+    <!-- ============ three readouts ============ -->
+    <text x="34" y="272" font-size="13" font-weight="600" opacity="0.55" letter-spacing="0.08em">THREE WAYS TO READ THE SAME STATE</text>
+
+    <g stroke="currentColor" stroke-width="1.5" fill="none">
+      <rect x="120" y="296" width="196" height="86" rx="6"/>
+      <rect x="374" y="296" width="196" height="86" rx="6"/>
+      <rect x="628" y="296" width="230" height="86" rx="6" stroke="#d2673a" stroke-width="2.2"/>
+    </g>
+
+    <g text-anchor="middle">
+      <text x="218" y="320" font-size="12.5" font-weight="600">pole readout</text>
+      <text x="218" y="340" font-size="10.5" opacity="0.7">oscillatory vs transient modes</text>
+      <text x="218" y="356" font-size="10.5" opacity="0.7">→ does it predict failure?</text>
+      <text x="218" y="374" font-size="10" opacity="0.55">ext17 · ext18 · ext19 · ext20</text>
+
+      <text x="472" y="320" font-size="12.5" font-weight="600">mode transplant</text>
+      <text x="472" y="340" font-size="10.5" opacity="0.7">factors learned on one regime,</text>
+      <text x="472" y="356" font-size="10.5" opacity="0.7">reused on another</text>
+      <text x="472" y="374" font-size="10" opacity="0.55">ext21</text>
+
+      <text x="743" y="320" font-size="12.5" font-weight="600" fill="#d2673a">allocation layer</text>
+      <text x="743" y="340" font-size="10.5" opacity="0.75">split scarce resource over 16 regions</text>
+      <text x="743" y="356" font-size="10.5" opacity="0.75">scored on realised welfare, not VRMSE</text>
+      <text x="743" y="374" font-size="10" opacity="0.55">ext22 · ext23</text>
+    </g>
+
+    <g stroke="currentColor" stroke-width="1.5" fill="none">
+      <path d="M 650 212 L 650 250 L 218 250 L 218 290" marker-end="url(#pl-arrow)"/>
+      <path d="M 650 212 L 650 250 L 472 250 L 472 290" marker-end="url(#pl-arrow)"/>
+      <path d="M 650 212 L 650 250 L 743 250 L 743 290" marker-end="url(#pl-arrow)" stroke="#d2673a"/>
+    </g>
+
+    <!-- ============ the closing claim ============ -->
+    <line x1="628" y1="404" x2="858" y2="404" stroke="#d2673a" stroke-width="1" opacity="0.4"/>
+    <text x="628" y="426" font-size="11.5" opacity="0.8">an error here is not a number in a table —</text>
+    <text x="628" y="443" font-size="11.5" opacity="0.8">it is a region that gets the wrong share,</text>
+    <text x="628" y="460" font-size="11.5" opacity="0.8">by | 1 − α | / α times the mistake.</text>
+
+    <text x="34" y="470" font-size="11.5" opacity="0.6">Solid arrows carry field data. Dashed boxes are measurements made on the data before any model is fitted — they constrain the design rather than consume its output.</text>
+  </g>
+</svg>

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 470" color="#12151c" role="img" aria-label="One curve, absolute value of one minus alpha over alpha, governs both how much the allocation amplifies a surrogate's error and how much a region gains by lying. It reaches zero only at alpha equals one, where the allocation is an equal split that ignores the forecast entirely.">
+  <defs>
+    <marker id="af-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" fill="currentColor">
+
+    <text x="40" y="34" font-size="13" font-weight="600" opacity="0.55" letter-spacing="0.08em">THE α-FAIR FAMILY</text>
+    <text x="40" y="60" font-size="14">allocation rule &#160; a<tspan font-size="10" dy="4">r</tspan><tspan dy="-4"> </tspan> ∝ &#160; ĝ<tspan font-size="10" dy="4">r</tspan><tspan dy="-4" font-size="11" baseline-shift="super">(1−α)/α</tspan></text>
+
+    <!-- ===== the curve ===== -->
+    <g stroke="currentColor" stroke-width="1" opacity="0.35">
+      <line x1="100" y1="330" x2="856" y2="330"/>
+    </g>
+
+    <!-- y axis -->
+    <line x1="100" y1="110" x2="100" y2="330" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+    <g font-size="11" opacity="0.6" text-anchor="end">
+      <text x="92" y="334">0</text>
+      <text x="92" y="271">1</text>
+      <text x="92" y="204">2</text>
+      <text x="92" y="137">3</text>
+    </g>
+    <g stroke="currentColor" stroke-width="0.7" opacity="0.13">
+      <line x1="100" y1="267" x2="856" y2="267"/>
+      <line x1="100" y1="200" x2="856" y2="200"/>
+      <line x1="100" y1="133" x2="856" y2="133"/>
+    </g>
+
+    <!-- alpha < 1 branch: blows up -->
+    <polyline points="120,130 150,163 180,208 210,242 240,263 270,282 300,302 330,318 360,330"
+              fill="none" stroke="#d2673a" stroke-width="2.6" stroke-linejoin="round"/>
+    <!-- alpha > 1 branch: saturates at 1 -->
+    <polyline points="360,330 390,311 420,300 450,290 480,297 480,297 510,288 540,287 570,282 600,280 660,275 720,272 780,270 840,268"
+              fill="none" stroke="#d2673a" stroke-width="2.6" stroke-linejoin="round"/>
+    <line x1="100" y1="267" x2="856" y2="267" stroke="#d2673a" stroke-width="1" stroke-dasharray="3 5" opacity="0.55"/>
+    <text x="862" y="264" font-size="10.5" fill="#d2673a" opacity="0.8">→ 1</text>
+
+    <!-- the single label carried by that one curve -->
+    <text x="150" y="105" font-size="13.5" font-weight="600" fill="#d2673a">| 1 − α | / α</text>
+    <text x="150" y="124" font-size="11.5" opacity="0.75">error amplification &#160;=&#160; incentive to misreport</text>
+
+    <!-- ===== alpha axis ticks ===== -->
+    <g font-size="11.5" text-anchor="middle" opacity="0.75">
+      <text x="120" y="352">α = ¼</text>
+      <text x="240" y="352">½</text>
+      <text x="360" y="352">1</text>
+      <text x="480" y="352">2</text>
+      <text x="600" y="352">4</text>
+      <text x="780" y="352">→ ∞</text>
+    </g>
+    <g stroke="currentColor" stroke-width="1" opacity="0.4">
+      <line x1="120" y1="330" x2="120" y2="338"/>
+      <line x1="240" y1="330" x2="240" y2="338"/>
+      <line x1="360" y1="330" x2="360" y2="338"/>
+      <line x1="480" y1="330" x2="480" y2="338"/>
+      <line x1="600" y1="330" x2="600" y2="338"/>
+      <line x1="780" y1="330" x2="780" y2="338"/>
+    </g>
+
+    <!-- ===== the three named members ===== -->
+    <g text-anchor="middle">
+      <line x1="120" y1="362" x2="120" y2="386" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+      <text x="120" y="401" font-size="12.5" font-weight="600">max-efficiency</text>
+      <text x="120" y="418" font-size="11" opacity="0.65">α → 0</text>
+      <text x="120" y="436" font-size="11" fill="#d2673a">worst on both</text>
+
+      <line x1="360" y1="362" x2="360" y2="386" stroke="#2f7d63" stroke-width="1.6"/>
+      <text x="360" y="401" font-size="12.5" font-weight="600" fill="#2f7d63">envy-free / proportional</text>
+      <text x="360" y="418" font-size="11" opacity="0.65">α = 1 — equal split</text>
+      <text x="360" y="436" font-size="11" fill="#2f7d63">the only strategy-proof member</text>
+
+      <line x1="780" y1="362" x2="780" y2="386" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+      <text x="780" y="401" font-size="12.5" font-weight="600">max-min / leximin</text>
+      <text x="780" y="418" font-size="11" opacity="0.65">α → ∞</text>
+      <text x="780" y="436" font-size="11" opacity="0.7">bounded, never zero</text>
+    </g>
+
+    <!-- ===== the sting ===== -->
+    <circle cx="360" cy="330" r="5.5" fill="#2f7d63"/>
+    <path d="M 470 176 L 386 318" fill="none" stroke="#2f7d63" stroke-width="1.3" marker-end="url(#af-arrow)" opacity="0.8"/>
+    <text x="478" y="166" font-size="12.5" font-weight="600" fill="#2f7d63">the unique zero —</text>
+    <text x="478" y="184" font-size="12" opacity="0.8">and it gets there by ignoring ĝ</text>
+    <text x="478" y="201" font-size="12" opacity="0.8">altogether, so the forecast the</text>
+    <text x="478" y="218" font-size="12" opacity="0.8">whole pipeline produces is unused.</text>
+  </g>
+</svg>
