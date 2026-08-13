@@ -88,6 +88,22 @@ empirical transfer function and extracting pole structure from them.
   interpretable controls (a fitted shrinkage, a box blur) fail to reproduce.
   Acting on an 8-step-stale observation is worse than ignoring the state
   entirely.
+- [Is the allocation robust to manipulation?](strategic_allocation.md)
+  (ext23, H4) -- the same allocation layer read as a mechanism, when the regions
+  being allocated to can influence what the allocator sees about them. The
+  incentive to misreport and the sensitivity to surrogate error turn out to be
+  the same derivative, `|1-alpha|/alpha`, so the two cannot be bought
+  separately: the only strategy-proof member of the family is the envy-free one
+  at alpha = 1, and it is strategy-proof because it ignores the state. Max
+  efficiency is unboundedly manipulable on 100% of states -- a 20% lie flips the
+  argmax and takes the whole budget. Adds a leximin implementation by
+  progressive filling, where a per-region capacity bounds any lie without
+  payments or verification: against a 10x misreport it cuts the winnings from
+  6.93x to 1.64x for 4.2% of the worst-off region's welfare. The learned
+  allocator is *not* a softer target than the closed form under a matched
+  attack, and a no-regret learner, though it holds its guarantee, loses to a
+  one-step forecast by three to four orders of magnitude -- its comparator is a
+  constant allocation, which in an oscillating ecosystem it beats outright.
 
 ## Baseline
 
