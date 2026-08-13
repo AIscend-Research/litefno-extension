@@ -24,6 +24,16 @@ envy-free point, so pure max-efficiency and pure max-min are both fragile and th
 fair middle is not. See
 [docs/fair_allocation.md](docs/fair_allocation.md) for H3.
 
+ext23 reads that same layer as a mechanism, since the regions being allocated to
+are often the ones reporting on themselves. The incentive to misreport turns out
+to be the *same derivative* as the sensitivity to surrogate error, so
+manipulation-robustness and error-robustness cannot be bought separately: the
+only strategy-proof rule in the family is the envy-free one, and it is
+strategy-proof because it ignores the state. A leximin implementation with
+per-region capacities bounds what any lie can win without payments or
+verification. See
+[docs/strategic_allocation.md](docs/strategic_allocation.md) for H4.
+
 The reproduction this builds on stands unchanged: on Gray-Scott at 32x32 across
 three seeds, a parameter-matched low-rank CNN matches or outperforms LiteFNO on
 one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
@@ -186,9 +196,12 @@ generate their own PDE testbeds, so they run without The Well data or a GPU.
 
 - [What does a surrogate's error cost a fair decision?](docs/fair_allocation.md)
   (ext22, H3)
+- [Is the allocation robust to manipulation?](docs/strategic_allocation.md)
+  (ext23, H4)
 
 ```bash
-python3 scripts/fair_allocation.py    # H3
+python3 scripts/fair_allocation.py       # H3
+python3 scripts/strategic_allocation.py  # H4
 ```
 
 ### Spectral characterisation of the data
