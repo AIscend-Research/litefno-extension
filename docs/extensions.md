@@ -122,6 +122,26 @@ empirical transfer function and extracting pole structure from them.
   regular lattice the centrality scores are constant, which the table labels
   rather than reports as a result.
 
+## Cost: is any of this deployable?
+
+- [Is the low-rank operator actually deployable?](deployability.md) (ext25, H6)
+  -- size, FLOPs and latency across nine arms spanning 383x in parameters, with
+  the FLOP model derived in closed form and checked against torch's own tracer
+  (exact on the CNN and dense-spectral arms, 0.4% on CP). H6 -- that parameter
+  count predicts deployability -- is refuted: the rank correlation between
+  parameters and batch-1 latency is 0.067, and the CP-factorized arm has 383x
+  fewer parameters than dense FNO-S while running 37% slower. The cause is closed
+  form: CP rebuilds its dense spectral weight every forward pass at
+  `8*rank*in*out*m1*m2` flops, which does not scale with batch size and is
+  74-92% of the batch-1 budget. Folding that reconstruction once at eval time is
+  worth 1.4-1.8x for bitwise-identical outputs, an unchanged checkpoint and
+  +8-64 MB of RAM. FLOPs rank models much better (0.57-0.88) but price them
+  badly -- the removed work ran at 115 GFLOP/s and what remains runs at 8, so
+  the closed form over-predicts the speedup 12.35x against 1.79x measured.
+  Latency scaling with grid size inverts the ranking between 32x32 and 128x128,
+  and every width-64 configuration in the repo -- including the two its own
+  protocol trains -- misses a 12-hour CPU session by a factor of two.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the
