@@ -1,0 +1,8 @@
+{
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "processor": "arm",
+  "torch": "2.12.0",
+  "torch_threads_default": 4,
+  "peak_rss_mb": 884.9375,
+  "note": "latency numbers are hardware-specific; the rank correlations and the closed-form ratios are not"
+}
