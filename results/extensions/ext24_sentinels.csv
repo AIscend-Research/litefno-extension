@@ -1,0 +1,7 @@
+graph,rule,n_sentinels,mean_delay,median_delay,spread_at_detection,missed,n_runs,score_is_a_tie
+lattice (p=0),eigenvector,3,2.1875,2.0,0.2890625,0,32,True
+lattice (p=0),degree,3,3.15625,3.0,0.421875,0,32,True
+lattice (p=0),random,3,2.3203125,2.0,0.3119140625,0,640,True
+trade network (p=1),eigenvector,3,2.15625,2.5,0.275390625,0,32,False
+trade network (p=1),degree,3,2.15625,2.5,0.275390625,0,32,False
+trade network (p=1),random,3,2.384375,3.0,0.307421875,0,640,True

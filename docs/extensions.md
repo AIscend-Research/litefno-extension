@@ -104,6 +104,23 @@ empirical transfer function and extracting pole structure from them.
   attack, and a no-regret learner, though it holds its guarantee, loses to a
   one-step forecast by three to four orders of magnitude -- its comparator is a
   constant allocation, which in an oscillating ecosystem it beats outright.
+- [Does scarcity travel on a network the operator cannot see?](network_scarcity.md)
+  (ext24, H5) -- regions that trade are not independent given the field, so
+  scarcity is propagated between them by an SIS cascade borrowed from
+  epidemiology and a graph-convolutional head is added on top of LiteFNO. What
+  makes the result interpretable is a closed form: on a periodic grid the Fourier
+  modes are exactly the lattice Laplacian's eigenvectors (residual 1.5e-14), so
+  the spectral convolution is already a graph convolution and only non-lattice
+  edges can add capacity. Four arms at 4913 parameters each, differing in one
+  matrix, confirm the topological half of H5 -- the true network's advantage over
+  a lattice graph is 0% at zero shortcuts and 21-28% once a fifth or more of the
+  edges leave the lattice, and it survives a degree-preserving rewired control by
+  12-23%. The null half is refuted: hard-wiring even the *redundant* lattice
+  graph buys 7.3%, so representable is not learned. The simulated cascade matches
+  its `1/lambda_1` epidemic threshold to 0.3% on four graph families. Sentinel
+  placement by centrality beats random by only 0.22 steps of warning, and on the
+  regular lattice the centrality scores are constant, which the table labels
+  rather than reports as a result.
 
 ## Baseline
 
