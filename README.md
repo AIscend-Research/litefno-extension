@@ -34,6 +34,17 @@ per-region capacities bounds what any lie can win without payments or
 verification. See
 [docs/strategic_allocation.md](docs/strategic_allocation.md) for H4.
 
+ext24 drops the assumption both of those make — that regions are independent
+once you know the field — and lets scarcity spread along a trade network with an
+SIS cascade borrowed from epidemiology, with a graph-convolutional head on top of
+LiteFNO. The framing comes from a closed form: on a periodic grid the Fourier
+modes *are* the lattice Laplacian's eigenvectors (residual 1.5e-14), so a
+spectral convolution is already a graph convolution and only non-lattice edges
+can be new capacity. They are: the true network beats a same-degree wrong-wiring
+control by 12-23% and beats the lattice graph by 0% at zero shortcuts rising to
+27% at 78%. See
+[docs/network_scarcity.md](docs/network_scarcity.md) for H5.
+
 The reproduction this builds on stands unchanged: on Gray-Scott at 32x32 across
 three seeds, a parameter-matched low-rank CNN matches or outperforms LiteFNO on
 one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
@@ -206,10 +217,13 @@ generate their own PDE testbeds, so they run without The Well data or a GPU.
   (ext22, H3)
 - [Is the allocation robust to manipulation?](docs/strategic_allocation.md)
   (ext23, H4)
+- [Does scarcity travel on a network the operator cannot see?](docs/network_scarcity.md)
+  (ext24, H5)
 
 ```bash
 python3 scripts/fair_allocation.py       # H3
 python3 scripts/strategic_allocation.py  # H4
+python3 scripts/network_scarcity.py      # H5
 ```
 
 ### Spectral characterisation of the data
