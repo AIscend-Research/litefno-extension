@@ -73,7 +73,11 @@ code:
   - doi: 10.5281/zenodo.20793536
 
 # Data (remove or leave empty if you don't have a separate dataset DOI)
-data: []
+# Preprocessed Gray-Scott splits + trained checkpoints, archived CC BY 4.0.
+# Same DOI the README's fast path resolves.
+data:
+  - doi: 10.5281/zenodo.20718092
+    url: https://doi.org/10.5281/zenodo.20718092
 
 # Original paper being reproduced
 replication:
@@ -117,7 +121,7 @@ contributors:
 
 # This information will be provided by the editor
 dates:
-  - received:  November 1, 2018
+  - received:
   - accepted:
   - published:
 
