@@ -413,6 +413,14 @@ def gap_closed(records: list[dict]) -> list[dict]:
     held-out and seen VRMSEs are carried alongside, and a fold whose gap closed
     while ``held_out_vrmse`` rose is flagged rather than counted -- that is the
     denominator shrinking, not the numerator.
+
+    Folds with no gap to begin with are excluded rather than scored. If the
+    held-out regime was already no harder than the seen ones (``g <= 1``), the
+    excess is zero or negative and the fraction is not a fraction of anything:
+    dividing by a small negative excess turns a trivial movement into a large
+    signed percentage, and sign-flips it. Those folds report NaN and are left
+    out of the medians, because "closed 400% of a gap that did not exist" is
+    noise wearing a headline number's clothes.
     """
     by_fold: dict[str, dict[str, dict]] = {}
     for r in records:
@@ -427,8 +435,9 @@ def gap_closed(records: list[dict]) -> list[dict]:
             if arm == "baseline":
                 continue
             excess = base["gap_ratio"] - 1.0
+            # only a positive excess is a gap; see the docstring
             closed = ((base["gap_ratio"] - r["gap_ratio"]) / excess
-                      if abs(excess) > 1e-12 else float("nan"))
+                      if excess > 1e-12 else float("nan"))
             out.append({
                 "held_out": held, "arm": arm,
                 "baseline_gap": base["gap_ratio"], "arm_gap": r["gap_ratio"],

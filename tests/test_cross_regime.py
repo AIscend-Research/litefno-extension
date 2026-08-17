@@ -317,3 +317,37 @@ def test_gap_closed_is_undefined_when_the_baseline_had_no_gap():
     ]
     # nothing to close: dividing by zero excess would fabricate a percentage
     assert np.isnan(cr.gap_closed(recs)[0]["frac_gap_closed"])
+
+
+def test_gap_closed_is_undefined_when_the_held_out_regime_was_easier():
+    # gliders came in at 0.98x in the pilot: the held-out regime was no harder
+    # than the seen ones, so there is no excess to remove. A small negative
+    # denominator would turn a trivial movement into a huge signed percentage.
+    recs = [
+        {"held_out": "gliders", "arm": "baseline", "gap_ratio": 0.98,
+         "held_out_vrmse": 0.0509, "seen_vrmse": 0.0519},
+        {"held_out": "gliders", "arm": "robust", "gap_ratio": 0.90,
+         "held_out_vrmse": 0.0470, "seen_vrmse": 0.0522},
+    ]
+    out = cr.gap_closed(recs)
+    assert np.isnan(out[0]["frac_gap_closed"])
+    # the raw errors are still reported -- only the ratio is withheld
+    assert out[0]["held_vrmse_delta"] == pytest.approx(-0.0039)
+
+
+def test_gap_closed_medians_ignore_the_undefined_folds():
+    # one real fold, one with no gap; the median must come from the real one
+    recs = [
+        {"held_out": "maze", "arm": "baseline", "gap_ratio": 3.0,
+         "held_out_vrmse": 0.30, "seen_vrmse": 0.10},
+        {"held_out": "maze", "arm": "robust", "gap_ratio": 2.0,
+         "held_out_vrmse": 0.20, "seen_vrmse": 0.10},
+        {"held_out": "gliders", "arm": "baseline", "gap_ratio": 0.98,
+         "held_out_vrmse": 0.05, "seen_vrmse": 0.051},
+        {"held_out": "gliders", "arm": "robust", "gap_ratio": 0.90,
+         "held_out_vrmse": 0.047, "seen_vrmse": 0.052},
+    ]
+    fr = [c["frac_gap_closed"] for c in cr.gap_closed(recs)]
+    finite = [f for f in fr if np.isfinite(f)]
+    assert len(finite) == 1
+    assert finite[0] == pytest.approx(0.5)
