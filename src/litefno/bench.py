@@ -45,11 +45,19 @@ No network access, no data files.
 from __future__ import annotations
 
 import platform
-import resource
 import statistics
 import time
 from math import log2
 from typing import Optional
+
+# `resource` is POSIX-only. It backs exactly one function here
+# (`peak_rss_bytes`), so importing it at module scope made the whole module --
+# and with it every FLOP and latency helper, none of which need it -- fail to
+# import on Windows. Windows gets the equivalent number from psapi instead.
+try:
+    import resource
+except ImportError:  # Windows
+    resource = None
 
 import torch
 from torch import nn
@@ -110,9 +118,51 @@ def peak_rss_bytes() -> int:
     wrong is a factor of 1024, which is large enough to turn a model that fits a
     16 GB notebook into one that does not, so the unit is resolved by platform
     rather than assumed.
+
+    Windows has no ``getrusage``; ``PeakWorkingSetSize`` from psapi is the same
+    quantity (high-water mark of resident pages) and is already in bytes.
     """
-    raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return int(raw) if platform.system() == "Darwin" else int(raw) * 1024
+    if resource is not None:
+        raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return int(raw) if platform.system() == "Darwin" else int(raw) * 1024
+
+    import ctypes
+    from ctypes import wintypes
+
+    class _PROCESS_MEMORY_COUNTERS(ctypes.Structure):
+        _fields_ = [
+            ("cb", wintypes.DWORD),
+            ("PageFaultCount", wintypes.DWORD),
+            ("PeakWorkingSetSize", ctypes.c_size_t),
+            ("WorkingSetSize", ctypes.c_size_t),
+            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+            ("PagefileUsage", ctypes.c_size_t),
+            ("PeakPagefileUsage", ctypes.c_size_t),
+        ]
+
+    # Signatures must be declared: HANDLE is 64-bit on win64 and ctypes would
+    # otherwise marshal the -1 pseudo-handle as a 32-bit int.
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    psapi = ctypes.WinDLL("psapi", use_last_error=True)
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    kernel32.GetCurrentProcess.argtypes = []
+    psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+    psapi.GetProcessMemoryInfo.argtypes = [
+        wintypes.HANDLE,
+        ctypes.POINTER(_PROCESS_MEMORY_COUNTERS),
+        wintypes.DWORD,
+    ]
+
+    counters = _PROCESS_MEMORY_COUNTERS()
+    counters.cb = ctypes.sizeof(counters)
+    if not psapi.GetProcessMemoryInfo(
+        kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb
+    ):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return int(counters.PeakWorkingSetSize)
 
 
 # --------------------------------------------------------------------------
