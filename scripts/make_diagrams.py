@@ -144,7 +144,11 @@ def render_mode_shells(out: Path, modes1: int = 12, modes2: int = 12,
         f'Drawn in centred k_y order; the layer stores the negative half folded to the end.</text>')
 
     add("</g></svg>")
-    out.write_text("\n".join(parts) + "\n")
+    # Explicit UTF-8: the labels carry an em-dash and a multiplication sign, and
+    # write_text otherwise picks the locale codepage. On a cp1252 host that emits
+    # bytes no XML parser will accept, so the figure regenerates "changed" and
+    # tests/test_diagrams.py fails on a platform difference rather than on drift.
+    out.write_text("\n".join(parts) + "\n", encoding="utf-8")
     print(f"wrote {out}  ({int(mask.sum())}/{mask.size} modes in {len(shells)} shells)")
 
 
