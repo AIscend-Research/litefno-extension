@@ -189,3 +189,131 @@ def test_prediction_check_computes_distance_from_the_training_mean(tmp_path):
 def test_prediction_check_is_skipped_without_ext10(tmp_path):
     assert cr.check_ext10_prediction([{"held_out": "maze", "gap_ratio": 2.0}],
                                      tmp_path / "missing.csv") == []
+
+
+# --------------------------------------------------------------------------
+# the three arms
+# --------------------------------------------------------------------------
+#
+# Training is still not exercised. What is checked is the arithmetic that turns
+# three arms into a "fraction of the gap closed" claim, plus the two properties
+# of the pieces that would silently corrupt it: noise at the documented scale,
+# and an ensemble average that reduces to the single-model path.
+
+
+def test_arms_isolate_augmentation_from_ensembling():
+    # arm 3 must differ from arm 2 in exactly one field, or the arm3-arm2
+    # difference is not attributable to the ensemble alone
+    diff = {k for k in cr.ARMS["robust"]
+            if cr.ARMS["robust"][k] != cr.ARMS["robust+unc"][k]}
+    assert diff == {"members"}
+    assert cr.ARMS["baseline"]["snr_db"] is None
+    assert cr.ARMS["baseline"]["members"] == 1
+    assert cr.ARMS["robust+unc"]["members"] > 1
+
+
+def test_noise_matches_the_ext3_definition():
+    torch = pytest.importorskip("torch")
+    gen = torch.Generator().manual_seed(0)
+    x = torch.randn(4096, 2, 8, 8) * 3.0 + 1.0
+    for snr in (40.0, 30.0, 20.0):
+        noisy = cr.add_noise(x, snr, gen)
+        # residual std is x.std() * 10 ** (-snr / 20), the ext3 formula
+        expected = float(x.std()) * (10.0 ** (-snr / 20.0))
+        assert float((noisy - x).std()) == pytest.approx(expected, rel=0.05)
+
+
+def test_noise_leaves_the_signal_unbiased():
+    torch = pytest.importorskip("torch")
+    gen = torch.Generator().manual_seed(0)
+    x = torch.zeros(8192, 1, 4, 4)
+    assert float(cr.add_noise(x, 20.0, gen).mean()) == pytest.approx(0.0, abs=1e-3)
+    # zero-variance input gets zero noise: the scale is relative, not absolute
+    assert float((cr.add_noise(x, 20.0, gen) - x).abs().max()) == 0.0
+
+
+def test_single_member_ensemble_equals_the_plain_evaluation():
+    torch = pytest.importorskip("torch")
+    lin = torch.nn.Conv2d(2, 2, 1)
+    x, y = torch.randn(32, 2, 8, 8), torch.randn(32, 2, 8, 8)
+    assert cr.evaluate_ensemble([lin], x, y, "cpu") == pytest.approx(
+        cr.br.evaluate_one_step(lin, x, y, "cpu"), rel=1e-9)
+
+
+def test_ensemble_averages_predictions_not_errors():
+    torch = pytest.importorskip("torch")
+
+    class Const(torch.nn.Module):
+        def __init__(self, v):
+            super().__init__()
+            self.v = v
+
+        def forward(self, x):
+            return torch.full_like(x, self.v)
+
+    y = torch.zeros(16, 1, 4, 4)
+    y[0, 0, 0, 0] = 1.0                      # give the target nonzero variance
+    x = torch.zeros_like(y)
+    # two members that bracket the target: the mean prediction is exact, while
+    # the mean of their individual VRMSEs is not zero
+    both = cr.evaluate_ensemble([Const(-1.0), Const(1.0)], x, y, "cpu")
+    each = [cr.evaluate_ensemble([Const(v)], x, y, "cpu") for v in (-1.0, 1.0)]
+    assert both < min(each)
+
+
+def test_gap_closed_is_the_fraction_of_baseline_excess_removed():
+    recs = [
+        {"held_out": "maze", "arm": "baseline", "gap_ratio": 3.0,
+         "held_out_vrmse": 0.30, "seen_vrmse": 0.10},
+        {"held_out": "maze", "arm": "robust", "gap_ratio": 2.0,
+         "held_out_vrmse": 0.20, "seen_vrmse": 0.10},
+    ]
+    out = cr.gap_closed(recs)
+    assert len(out) == 1
+    # baseline excess is 3.0 - 1 = 2.0; the arm removed 1.0 of it
+    assert out[0]["frac_gap_closed"] == pytest.approx(0.5)
+    assert out[0]["real_improvement"] is True
+    assert out[0]["held_vrmse_delta"] == pytest.approx(-0.10)
+
+
+def test_gap_closed_flags_improvement_bought_by_degrading_the_seen_side():
+    # identical gap improvement to the test above, but achieved by making the
+    # seen regimes worse while the held-out regime also got worse. The fraction
+    # still reads 50%, so the flag is the only thing separating them.
+    recs = [
+        {"held_out": "spots", "arm": "baseline", "gap_ratio": 3.0,
+         "held_out_vrmse": 0.30, "seen_vrmse": 0.10},
+        {"held_out": "spots", "arm": "robust", "gap_ratio": 2.0,
+         "held_out_vrmse": 0.40, "seen_vrmse": 0.20},
+    ]
+    out = cr.gap_closed(recs)
+    assert out[0]["frac_gap_closed"] == pytest.approx(0.5)
+    assert out[0]["real_improvement"] is False
+    assert out[0]["seen_vrmse_delta"] > 0
+
+
+def test_gap_closed_reports_negative_when_an_arm_widens_the_gap():
+    recs = [
+        {"held_out": "worms", "arm": "baseline", "gap_ratio": 2.0,
+         "held_out_vrmse": 0.20, "seen_vrmse": 0.10},
+        {"held_out": "worms", "arm": "robust", "gap_ratio": 2.5,
+         "held_out_vrmse": 0.25, "seen_vrmse": 0.10},
+    ]
+    assert cr.gap_closed(recs)[0]["frac_gap_closed"] == pytest.approx(-0.5)
+
+
+def test_gap_closed_needs_a_baseline_and_skips_folds_without_one():
+    recs = [{"held_out": "maze", "arm": "robust", "gap_ratio": 2.0,
+             "held_out_vrmse": 0.2, "seen_vrmse": 0.1}]
+    assert cr.gap_closed(recs) == []
+
+
+def test_gap_closed_is_undefined_when_the_baseline_had_no_gap():
+    recs = [
+        {"held_out": "maze", "arm": "baseline", "gap_ratio": 1.0,
+         "held_out_vrmse": 0.10, "seen_vrmse": 0.10},
+        {"held_out": "maze", "arm": "robust", "gap_ratio": 0.9,
+         "held_out_vrmse": 0.09, "seen_vrmse": 0.10},
+    ]
+    # nothing to close: dividing by zero excess would fabricate a percentage
+    assert np.isnan(cr.gap_closed(recs)[0]["frac_gap_closed"])

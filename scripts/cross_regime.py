@@ -44,6 +44,34 @@ the committed ext10 numbers rather than read off these results afterwards.
 The alternative it is being tested against is that the gap is governed by
 something else entirely -- difficulty, or how much the field moves per step --
 in which case the ordering will not follow the spectrum.
+
+Three arms: can the gap be closed? (ext26)
+------------------------------------------
+Measuring the gap invites the obvious follow-up -- can it be bought down? Two
+standard answers are added as arms on top of the baseline, in the order that
+keeps them separable:
+
+  baseline    plain LiteFNO, MSE on clean inputs
+  robust      identical, but inputs are perturbed during training at 30 dB
+  robust+unc  identical to `robust`, evaluated as a 4-member deep ensemble
+
+`robust+unc` differs from `robust` in exactly one field (member count), so the
+difference between them is the ensemble's contribution with the augmentation
+held fixed. Reporting one arm that changed both at once would confound them.
+
+The noise scale is not tuned. 30 dB is taken from ext3's committed noise curve,
+which used ``std * 10 ** (-snr / 20)`` on the input only; reusing the definition
+means the augmentation strength can be read against an existing measurement of
+what that perturbation costs at test time, rather than being chosen because it
+made the result look good.
+
+The headline is the fraction of the baseline gap each arm closes,
+``(g_base - g_arm) / (g_base - 1)``, which is 1.0 when the held-out regime
+becomes as cheap as the seen ones. That ratio has a failure mode worth naming:
+it also improves when the *seen* regimes get worse, which is not
+generalization. So the held-out and seen errors are carried next to it and any
+fold whose gap closed without the held-out error falling is flagged rather than
+counted.
 """
 from __future__ import annotations
 
@@ -103,15 +131,91 @@ def load_dataset(data_dir: Path):
 
 
 # --------------------------------------------------------------------------
-# one fold
+# the three arms
 # --------------------------------------------------------------------------
+#
+# Arm 1 is the plain model above. Arms 2 and 3 are the two standard answers to
+# "the held-out domain looks different", applied in the order that isolates
+# them: arm 2 changes what the model sees during training, arm 3 changes only
+# how it is queried at eval. Arm 3 therefore contains arm 2 unchanged -- its
+# members are arm-2 models differing solely in seed -- so the arm3-arm2
+# difference is the ensemble's contribution alone, with the augmentation held
+# fixed. Reporting the two together would confound them.
+
+ARMS = {
+    "baseline":     {"snr_db": None, "members": 1},
+    "robust":       {"snr_db": 30.0, "members": 1},
+    "robust+unc":   {"snr_db": 30.0, "members": 4},
+}
+
+
+def add_noise(x: torch.Tensor, snr_db: float, gen: torch.Generator) -> torch.Tensor:
+    """Input-side Gaussian noise at a target SNR.
+
+    Same definition as ext3 (``build_notebooks.py``): the noise scale is set
+    from the batch's own standard deviation, ``std * 10 ** (-snr / 20)``, so
+    "30 dB" means the same perturbation here that it means in the committed
+    ext3 noise curve. Reusing the number rather than picking a fresh one is
+    what lets the augmentation strength be read against an existing measurement
+    instead of tuned until the result looks good.
+
+    Noise goes on the input only. The target stays clean, so the model is asked
+    to map a perturbed state to the true next state rather than to reproduce
+    its own corruption.
+    """
+    std = float(x.std()) * (10.0 ** (-snr_db / 20.0))
+    return x + torch.randn(x.shape, generator=gen, device=x.device) * std
+
+
+def evaluate_ensemble(models: list, x, y, device, batch: int = 128) -> float:
+    """VRMSE of the mean prediction over members.
+
+    The average is taken over predictions, not over per-member VRMSEs: the
+    ensemble's forecast is the mean field, and the error of an average is not
+    the average of errors. With one member this reduces exactly to
+    ``br.evaluate_one_step``, which is what keeps the single-member arms
+    comparable to the ensemble arm.
+    """
+    for m in models:
+        m.eval()
+    preds = []
+    with torch.no_grad():
+        for i in range(0, len(x), batch):
+            xb = x[i:i + batch].to(device)
+            acc = None
+            for m in models:
+                p = m(xb)
+                acc = p if acc is None else acc + p
+            preds.append((acc / len(models)).cpu())
+    return float(br.vrmse(torch.cat(preds), y))
+
+
+def _build_member(xtr, device: str, seed: int):
+    """One initialised member with its optimiser. Seed drives init and order."""
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    model, factorization = br.build_model("litefno", xtr.shape[1], xtr.shape[1])
+    model = model.to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=br.LR)
+    sched = torch.optim.lr_scheduler.StepLR(opt, step_size=br.LR_STEP,
+                                            gamma=br.LR_GAMMA)
+    gen = torch.Generator(device=device).manual_seed(seed + 10_000)
+    return {"model": model, "opt": opt, "sched": sched, "gen": gen,
+            "factorization": factorization}
 
 
 def run_fold(held_out: str, data: dict, device: str, epochs: int, seed: int,
-             log_every: int = 20) -> dict:
-    torch.manual_seed(seed)
-    np.random.seed(seed)
+             arm: str = "baseline", log_every: int = 20) -> dict:
+    """Train this arm's members and score the ensemble on held-out vs seen.
 
+    Members are trained in lockstep -- all of them advance one epoch before any
+    checkpoint -- rather than one after another. That is not for speed; it is so
+    the gap-stability curve the module docstring promises exists for the
+    ensemble arm too. Evaluating a partially trained ensemble requires every
+    member to be at the same epoch, and training them sequentially would only
+    permit a curve for the last one.
+    """
+    cfg = ARMS[arm]
     train_arr, train_lab = data["train"]
     test_arr, test_lab = data["test"]
 
@@ -121,32 +225,37 @@ def run_fold(held_out: str, data: dict, device: str, epochs: int, seed: int,
     x_held, y_held = br.to_pairs(test_arr[test_lab == held_out])
     x_seen, y_seen = br.to_pairs(test_arr[test_lab != held_out])
 
-    model, factorization = br.build_model("litefno", xtr.shape[1], xtr.shape[1])
-    model = model.to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=br.LR)
-    sched = torch.optim.lr_scheduler.StepLR(opt, step_size=br.LR_STEP,
-                                            gamma=br.LR_GAMMA)
+    members = [_build_member(xtr, device, seed + 1000 * k)
+               for k in range(cfg["members"])]
+    factorization = members[0]["factorization"]
     loss_fn = nn.MSELoss()
+    snr_db = cfg["snr_db"]
 
     n = len(xtr)
     curve, t0 = [], time.time()
     for epoch in range(epochs):
-        model.train()
-        perm = torch.randperm(n)
         total = 0.0
-        for i in range(0, n, br.BATCH):
-            idx = perm[i:i + br.BATCH]
-            xb, yb = xtr[idx].to(device), ytr[idx].to(device)
-            opt.zero_grad()
-            loss = loss_fn(model(xb), yb)
-            loss.backward()
-            opt.step()
-            total += loss.detach().item() * len(idx)
-        sched.step()
+        for mem in members:
+            model, opt, gen = mem["model"], mem["opt"], mem["gen"]
+            model.train()
+            perm = torch.randperm(n)
+            for i in range(0, n, br.BATCH):
+                idx = perm[i:i + br.BATCH]
+                xb, yb = xtr[idx].to(device), ytr[idx].to(device)
+                if snr_db is not None:
+                    xb = add_noise(xb, snr_db, gen)
+                opt.zero_grad()
+                loss = loss_fn(model(xb), yb)
+                loss.backward()
+                opt.step()
+                total += loss.detach().item() * len(idx)
+            mem["sched"].step()
         if (epoch + 1) % log_every == 0 or epoch == epochs - 1:
-            v_held = br.evaluate_one_step(model, x_held, y_held, device)
-            v_seen = br.evaluate_one_step(model, x_seen, y_seen, device)
-            curve.append({"epoch": epoch + 1, "train_mse": total / n,
+            models = [m["model"] for m in members]
+            v_held = evaluate_ensemble(models, x_held, y_held, device)
+            v_seen = evaluate_ensemble(models, x_seen, y_seen, device)
+            curve.append({"epoch": epoch + 1,
+                          "train_mse": total / (n * len(members)),
                           "held_out_vrmse": v_held, "seen_vrmse": v_seen,
                           "gap_ratio": v_held / v_seen if v_seen else float("nan")})
             print(f"      epoch {epoch + 1:>4d}/{epochs}  held={v_held:.5f}  "
@@ -154,15 +263,17 @@ def run_fold(held_out: str, data: dict, device: str, epochs: int, seed: int,
                   f"({time.time() - t0:.0f}s)", flush=True)
 
     last = curve[-1]
+    v_held, v_seen = last["held_out_vrmse"], last["seen_vrmse"]
     return {
-        "held_out": held_out, "seed": seed, "epochs": epochs,
+        "arm": arm, "held_out": held_out, "seed": seed, "epochs": epochs,
+        "snr_db": cfg["snr_db"], "members": cfg["members"],
         "factorization": factorization,
         "n_train_traj": int(seen_mask.sum()),
         "n_held_pairs": len(x_held), "n_seen_pairs": len(x_seen),
-        "held_out_vrmse": last["held_out_vrmse"],
-        "seen_vrmse": last["seen_vrmse"],
+        "held_out_vrmse": v_held,
+        "seen_vrmse": v_seen,
         "gap_ratio": last["gap_ratio"],
-        "gap_absolute": last["held_out_vrmse"] - last["seen_vrmse"],
+        "gap_absolute": v_held - v_seen,
         "train_s": round(time.time() - t0, 1),
         "curve": curve,
     }
@@ -286,6 +397,101 @@ def print_report(records: list[dict]) -> None:
         print(f"    {r['held_out']:>9s}  {pts}")
 
 
+def gap_closed(records: list[dict]) -> list[dict]:
+    """Per-fold arm comparison: how much of the baseline's gap each arm removes.
+
+    The gap ratio is 1.0 when the held-out regime costs nothing, so the excess
+    a fold starts with is ``g_baseline - 1`` and the fraction closed is
+
+        closed = (g_baseline - g_arm) / (g_baseline - 1)
+
+    1.0 means the held-out regime became as cheap as the seen ones, 0.0 means
+    the arm moved nothing, and negative means it widened the gap.
+
+    The catch this table is built to expose: the ratio can also be improved by
+    making the *seen* regimes worse, which is not generalization. So the
+    held-out and seen VRMSEs are carried alongside, and a fold whose gap closed
+    while ``held_out_vrmse`` rose is flagged rather than counted -- that is the
+    denominator shrinking, not the numerator.
+    """
+    by_fold: dict[str, dict[str, dict]] = {}
+    for r in records:
+        by_fold.setdefault(r["held_out"], {})[r["arm"]] = r
+
+    out = []
+    for held, arms in by_fold.items():
+        base = arms.get("baseline")
+        if base is None:
+            continue
+        for arm, r in arms.items():
+            if arm == "baseline":
+                continue
+            excess = base["gap_ratio"] - 1.0
+            closed = ((base["gap_ratio"] - r["gap_ratio"]) / excess
+                      if abs(excess) > 1e-12 else float("nan"))
+            out.append({
+                "held_out": held, "arm": arm,
+                "baseline_gap": base["gap_ratio"], "arm_gap": r["gap_ratio"],
+                "frac_gap_closed": closed,
+                "baseline_held_vrmse": base["held_out_vrmse"],
+                "arm_held_vrmse": r["held_out_vrmse"],
+                "held_vrmse_delta": r["held_out_vrmse"] - base["held_out_vrmse"],
+                "baseline_seen_vrmse": base["seen_vrmse"],
+                "arm_seen_vrmse": r["seen_vrmse"],
+                "seen_vrmse_delta": r["seen_vrmse"] - base["seen_vrmse"],
+                "real_improvement": bool(
+                    r["held_out_vrmse"] < base["held_out_vrmse"]),
+            })
+    return out
+
+
+def print_arm_report(records: list[dict], closed: list[dict]) -> None:
+    print("\n=== Leave-one-regime-out, three arms (one-step VRMSE) ===")
+    hdr = (f"    {'held out':>9s} {'arm':>11s} {'held-out':>10s} {'seen':>10s} "
+           f"{'gap':>8s} {'s':>7s}")
+    print(hdr)
+    print("    " + "-" * (len(hdr) - 4))
+    for held in dict.fromkeys(r["held_out"] for r in records):
+        for arm in ARMS:
+            r = next((x for x in records
+                      if x["held_out"] == held and x["arm"] == arm), None)
+            if r is None:
+                continue
+            print(f"    {held:>9s} {arm:>11s} {r['held_out_vrmse']:>10.5f} "
+                  f"{r['seen_vrmse']:>10.5f} {r['gap_ratio']:>7.2f}x "
+                  f"{r['train_s']:>7.0f}")
+
+    if not closed:
+        return
+    print("\n=== How much of the cross-regime gap is closed? ===")
+    print("    closed = (gap_baseline - gap_arm) / (gap_baseline - 1); "
+          "1.0 = held-out as cheap as seen")
+    print("    'real' = held-out VRMSE actually fell; a closed gap with "
+          "real=no means the seen side got worse")
+    hdr = (f"    {'held out':>9s} {'arm':>11s} {'base gap':>9s} {'arm gap':>8s} "
+           f"{'closed':>8s} {'held dVRMSE':>12s} {'real':>5s}")
+    print(hdr)
+    print("    " + "-" * (len(hdr) - 4))
+    for c in closed:
+        print(f"    {c['held_out']:>9s} {c['arm']:>11s} "
+              f"{c['baseline_gap']:>8.2f}x {c['arm_gap']:>7.2f}x "
+              f"{c['frac_gap_closed']:>7.0%} {c['held_vrmse_delta']:>+12.5f} "
+              f"{'yes' if c['real_improvement'] else 'no':>5s}")
+
+    for arm in [a for a in ARMS if a != "baseline"]:
+        sub = [c for c in closed if c["arm"] == arm]
+        if not sub:
+            continue
+        fr = np.array([c["frac_gap_closed"] for c in sub], dtype=float)
+        fr = fr[np.isfinite(fr)]
+        n_real = sum(c["real_improvement"] for c in sub)
+        if len(fr):
+            print(f"    {arm:>11s}: median {np.median(fr):.0%} of the gap "
+                  f"closed across {len(fr)} folds "
+                  f"(range {fr.min():.0%} to {fr.max():.0%}); "
+                  f"held-out error actually fell in {n_real}/{len(sub)}")
+
+
 def write_csv(path: Path, rows: list[dict], drop=("curve",)) -> None:
     flat = [{k: v for k, v in r.items() if k not in drop} for r in rows]
     if not flat:
@@ -378,6 +584,9 @@ def main() -> None:
                          "gap-stability curve")
     ap.add_argument("--regimes", nargs="*", default=None,
                     help="which regimes to hold out (default: all)")
+    ap.add_argument("--arms", nargs="*", default=list(ARMS),
+                    choices=list(ARMS),
+                    help="which arms to run (default: all three)")
     ap.add_argument("--device", default=None)
     ap.add_argument("--out-dir", type=Path, default=Path("results/baseline"))
     ap.add_argument("--fig-dir", type=Path, default=Path("figures/baseline"))
@@ -396,25 +605,36 @@ def main() -> None:
 
     records = []
     for held in regimes:
-        print(f"\n  [hold out {held}]", flush=True)
-        rec = run_fold(held, data, device, args.epochs, args.seed,
-                       log_every=args.log_every)
-        print(f"    -> held-out {rec['held_out_vrmse']:.5f}  "
-              f"seen {rec['seen_vrmse']:.5f}  gap {rec['gap_ratio']:.2f}x "
-              f"({rec['train_s']:.0f}s)", flush=True)
-        records.append(rec)
-        write_csv(args.out_dir / "ext14_cross_regime.csv", records)
+        for arm in args.arms:
+            print(f"\n  [hold out {held} | arm {arm}]", flush=True)
+            rec = run_fold(held, data, device, args.epochs, args.seed,
+                           arm=arm, log_every=args.log_every)
+            print(f"    -> held-out {rec['held_out_vrmse']:.5f}  "
+                  f"seen {rec['seen_vrmse']:.5f}  gap {rec['gap_ratio']:.2f}x "
+                  f"({rec['train_s']:.0f}s)", flush=True)
+            records.append(rec)
+            write_csv(args.out_dir / "ext26_arms.csv", records)
 
-    print_report(records)
-    pred = check_ext10_prediction(records, args.ext10_csv)
+    base = [r for r in records if r["arm"] == "baseline"]
+    if base:
+        print_report(base)
+    closed = gap_closed(records)
+    print_arm_report(records, closed)
 
-    write_csv(args.out_dir / "ext14_cross_regime.csv", records)
+    # the ext10 spectral prediction is a claim about the baseline gap, so it is
+    # checked against the baseline arm only
+    pred = check_ext10_prediction(base, args.ext10_csv) if base else []
+
+    write_csv(args.out_dir / "ext26_arms.csv", records)
+    if closed:
+        write_csv(args.out_dir / "ext26_gap_closed.csv", closed)
     if pred:
-        write_csv(args.out_dir / "ext14_prediction_check.csv", pred)
-    (args.out_dir / "ext14_curves.json").write_text(json.dumps(
-        [{"held_out": r["held_out"], "curve": r["curve"]} for r in records],
-        indent=2))
-    plot(records, pred, args.fig_dir / "ext14_cross_regime.png")
+        write_csv(args.out_dir / "ext26_prediction_check.csv", pred)
+    (args.out_dir / "ext26_curves.json").write_text(json.dumps(
+        [{"held_out": r["held_out"], "arm": r["arm"], "curve": r["curve"]}
+         for r in records], indent=2))
+    if base:
+        plot(base, pred, args.fig_dir / "ext26_cross_regime.png")
 
 
 if __name__ == "__main__":
