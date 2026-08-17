@@ -17,6 +17,13 @@ dependencies = [
   "h5py",
   "pyyaml",
   "neuraloperator",
+  # streaming The Well over HTTP range requests (scripts/stream_preprocess.py,
+  # harmonic_content.open_remote). aiohttp is not imported directly -- it is
+  # the backend fsspec's "http" filesystem requires, and without it the stream
+  # fails at read time rather than at import.
+  "fsspec",
+  "huggingface_hub",
+  "aiohttp",
 ]
 
 [project.optional-dependencies]
