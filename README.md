@@ -45,6 +45,16 @@ control by 12-23% and beats the lattice graph by 0% at zero shortcuts rising to
 27% at 78%. See
 [docs/network_scarcity.md](docs/network_scarcity.md) for H5.
 
+ext25 asks whether any of this is deployable on the hardware a low-resource
+scientist has. It is the first extension whose answer is about the repository
+itself: parameter count, the number a low-rank paper reports, has a rank
+correlation of **0.067** with batch-1 latency across the model family — the
+CP-factorized arm has 383x fewer parameters than dense FNO-S and runs 37%
+slower, because CP rebuilds its dense spectral weight on every forward pass at a
+cost that does not depend on batch size. Folding that reconstruction once at eval
+time is worth 1.4-1.8x for bitwise-identical outputs and an unchanged checkpoint.
+See [docs/deployability.md](docs/deployability.md) for H6.
+
 The reproduction this builds on stands unchanged: on Gray-Scott at 32x32 across
 three seeds, a parameter-matched low-rank CNN matches or outperforms LiteFNO on
 one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
@@ -224,6 +234,15 @@ generate their own PDE testbeds, so they run without The Well data or a GPU.
 python3 scripts/fair_allocation.py       # H3
 python3 scripts/strategic_allocation.py  # H4
 python3 scripts/network_scarcity.py      # H5
+```
+
+### Cost
+
+- [Is the low-rank operator actually deployable?](docs/deployability.md)
+  (ext25, H6)
+
+```bash
+python3 scripts/deployability.py         # H6
 ```
 
 ### Spectral characterisation of the data
