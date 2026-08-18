@@ -278,6 +278,9 @@ python3 scripts/deployability.py         # H6
 
 ### Generalization: what happens off the training distribution
 
+- [Leave-one-regime-out generalization](docs/cross_regime.md) (ext14)
+- [Harmonic conditioning on the Turing shells](docs/harmonic_conditioning.md)
+  (ext15, not yet run)
 - [Can the cross-regime gap be bought down?](docs/cross_regime_arms.md)
   (ext26, H7)
 - [Accuracy under input degradation](docs/degradation_robustness.md)

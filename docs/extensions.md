@@ -153,6 +153,31 @@ empirical transfer function and extracting pole structure from them.
 
 ## Generalization: off the training distribution
 
+- [Leave-one-regime-out generalization](cross_regime.md) (ext14) -- six folds,
+  each holding out one Gray-Scott regime and scoring the same model on the
+  held-out regime and on the five it trained on. Only **two of six** regimes cost
+  anything to hold out: spirals 2.07x and bubbles 1.87x, against gliders 0.98x,
+  worms 0.97x, maze 0.90x and spots 0.56x. There is no single "cross-regime gap"
+  for this dataset -- a study holding out one regime would have concluded almost
+  anything depending on which. Five folds are flat across the epoch budget;
+  bubbles was still climbing, so its 1.87x is a lower bound. The pre-registered
+  ext10 prediction that the spectral outliers maze and spots should be the two
+  *worst* folds scores 0/2 -- they are the two best, with
+  rho(variance below mode 8, gap) = +0.943 where the mechanism requires negative.
+
+- [Harmonic conditioning on the Turing shells](harmonic_conditioning.md) (ext15)
+  -- a CP-factorized spectral convolution plus a learnable complex bias on a
+  fundamental wavenumber and its multiples, added on radial shells because a
+  Turing pattern selects a wavelength rather than an orientation. The band is
+  inherited from ext10 (maze and spots keep ~99% of spatial variance above mode
+  8, near mode 3-4 after downsampling) rather than tuned on the data it is tested
+  on. Control and conditioned arms are bit-identical at initialisation -- the bias
+  starts at zero, pinned by a test -- and the bias adds 1-2% of parameters, so a
+  difference cannot be attributed to size. The prediction is differential: it
+  should help maze and spots and do nothing for spirals and gliders, and a
+  *uniform* gain would be evidence against the mechanism. **Not yet run** -- the
+  model, script and tests exist; no results do.
+
 - [Can the cross-regime gap be bought down?](cross_regime_arms.md) (ext26, H7)
   -- three arms on the leave-one-regime-out fold: baseline, noise-augmented
   (`robust`), and a 4-member ensemble on top (`robust+unc`), the last differing
