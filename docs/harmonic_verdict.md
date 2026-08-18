@@ -68,7 +68,7 @@ on that ring is not the low-k prior ext9 killed. It is a targeted claim with a
 differential prediction -- help maze and spots, do nothing for the low-wavenumber
 regimes -- and a *uniform* gain would have been evidence against it.
 
-ext15 built the model and the A/B and never ran it. ext30 ran the same two arms
+ext15 built the model and the A/B and did not run it at the time. It has since been run at the specified protocol -- three seeds, 100 epochs, fundamental 4.0 -- and the prediction inverts: rho = -0.200, with the conditioned arm worse in 3 of 3 seeds and the largest improvement going to spirals, the most low-wavenumber regime in the set. ext30 ran the same two arms
 across four training-set sizes at three seeds and found nothing:
 
 - the harmonic arm is very slightly **worse** at every size,
@@ -82,9 +82,7 @@ across four training-set sizes at three seeds and found nothing:
 The effect is about **2% of the seed spread**, consistent with the bias's 220
 extra parameters (+2.94%) contributing noise and nothing else.
 
-Two honest qualifications. This is not the ext15 A/B as specified -- that is
-three seeds at 100 epochs with a per-regime verdict of its own, and it remains
-unrun. And a null at pilot scale does not exclude an effect at much larger
+One honest qualification remains. A null at pilot scale does not exclude an effect at much larger training sets. The other -- a fundamental other than the inherited 4.0 -- now has one point on it: the same A/B at 3.5 is also null (rho +0.086, conditioned wins 2 of 3), which is one alternative band rather than a sweep. And a null at pilot scale does not exclude an effect at much larger
 training sets, or at a fundamental other than the inherited 4.0, which was never
 swept.
 
@@ -142,7 +140,7 @@ the spectral layer learn its own weights.
 | ext9 | (in [harmonic_content.md](harmonic_content.md)) | `ext9_variance_decomposition.csv` |
 | ext10 | [harmonic_content.md](harmonic_content.md) | `ext10_harmonic_summary_gray_scott.csv` |
 | ext12 | [forced_harmonics.md](forced_harmonics.md) | `ext12_planetswe_*.csv` |
-| ext15 | [harmonic_conditioning.md](harmonic_conditioning.md) | none -- never run |
+| ext15 | [harmonic_conditioning.md](harmonic_conditioning.md) | `ext15_harmonic_ab_*.csv` |
 | ext30 | [data_efficiency.md](data_efficiency.md) | `ext30_*.csv` |
 
 No compute was run for this document; it consolidates results already committed.
