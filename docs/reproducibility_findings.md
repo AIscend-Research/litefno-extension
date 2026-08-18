@@ -65,3 +65,33 @@ paper-faithful configuration.
 As of now the project has **not** reproduced LiteFNO: only the FNO-S baseline and
 a CNN placeholder are trained. A reproduction paper (including a partial/negative
 result) requires completing the spectral LiteFNO implementation first.
+
+## Status update: the spectral model now exists
+
+Two facts above are out of date and are corrected here rather than rewritten in
+place, since the conclusion they support is the team's to revise.
+
+`src/litefno/models/harmonic.py` (added in ext15) **is** a genuine CP-factorized
+spectral convolution: `rfft2`, complex weights, mode truncation, and the weight
+tensor stored as a rank vector plus one factor matrix per tensor mode. So the
+"planned via the `neuraloperator` library" item under *What a valid reproduction
+requires* has been built in the repo itself.
+
+What has **not** changed is `src/litefno/models/litefno.py`, which still contains
+no FFT and remains the low-rank CNN placeholder. Everything in
+[../results/logs/](../results/logs/) and the committed checkpoints still comes
+from that placeholder, so the caveat on those numbers stands unaltered.
+
+## A second negative result, alongside this one
+
+The harmonic claim -- that telling the model which Fourier modes matter should
+help -- has now been tested in three forms and failed in two of them, surviving
+once as a real but minor effect. It is written up as a verdict in
+[harmonic_verdict.md](harmonic_verdict.md).
+
+It belongs beside this document because it reaches the same conclusion from the
+opposite direction. This page asks whether a *generic* Fourier inductive bias
+earns its keep at 32x32; the harmonic line asks whether *sharpening* that bias
+into an explicit prior on named modes earns its keep. Neither does. Recording
+both together is the point -- a null that is only mentioned in passing across
+four other documents is buried, not reported.

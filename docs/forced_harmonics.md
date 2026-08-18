@@ -1,7 +1,9 @@
 # Does known periodic forcing justify a temporal harmonic prior?
 
 The spatial form of the harmonic claim is already dead: ext9 / PR #15 showed
-Gray-Scott's variance is not low-wavenumber dominated. ext10 then found that four
+Gray-Scott's variance is not low-wavenumber dominated. (The full verdict on the
+claim, across all three forms it was tested in, is in
+[harmonic_verdict.md](harmonic_verdict.md); this page is its temporal form.) ext10 then found that four
 of six Gray-Scott scenarios contain no temporal line at all. But in all of those
 the forcing is absent or unknown, so none is a fair test of a *temporal* prior —
 you cannot fault a prior for missing a periodicity that was never there.

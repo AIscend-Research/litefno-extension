@@ -43,6 +43,19 @@ The extension phase focuses on low-resource deployment and accessibility.
   temporal prior survives where the spatial one did not, as a real but minor
   effect.
 
+- [Verdict on the harmonic claim](harmonic_verdict.md) -- consolidates ext9,
+  ext12, ext15 and ext30 into one negative result rather than leaving it
+  mentioned in passing across four documents. The claim was tested in three
+  forms: the low-wavenumber spatial prior (**dead** -- the spectrum peaks at k=5,
+  needs 15 shells for 95% of variance, and only 29% sits at or below k=4), the temporal
+  prior under documented forcing (**survives, small** -- phase-locked at
+  0.995-0.998 but worth 5.4% of temporal variance), and the mid-spectrum bias on
+  the Turing shells (**dead** -- 0/12 paired wins, 1.00x data multiplier, no
+  differential effect on maze and spots). Written up beside the negative
+  reproduction in [reproducibility_findings.md](reproducibility_findings.md),
+  which it mirrors from the opposite direction: that page asks whether a generic
+  Fourier bias earns its keep, this asks whether sharpening it does.
+
 ## SpecScope: interrogating the trained operator
 
 The extension's main line. Everything above characterises the *data*; these ask

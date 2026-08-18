@@ -55,7 +55,9 @@ supplying structure at the wavenumbers that need it. An aggregate VRMSE would
 therefore be the wrong verdict and would probably show nothing either way.
 
 The repo's own prior on the effect size is low, and recording that in advance is
-the point of stating it. ext9 killed the spatial harmonic prior in its
+the point of stating it, and it was borne out -- see
+[harmonic_verdict.md](harmonic_verdict.md) for where this fits in the claim's
+overall record. ext9 killed the spatial harmonic prior in its
 low-wavenumber form. ext12 found that even with documented, exactly periodic
 forcing, harmonics carry only 5.4% of temporal variance globally. This
 intervention differs in targeting a mid-spectrum band two regimes genuinely
