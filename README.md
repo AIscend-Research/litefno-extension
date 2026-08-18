@@ -34,6 +34,19 @@ per-region capacities bounds what any lie can win without payments or
 verification. See
 [docs/strategic_allocation.md](docs/strategic_allocation.md) for H4.
 
+ext32 takes those two closed forms out of simulation. The family allocates
+`a ∝ g^beta` with `beta=(1-alpha)/alpha`, so ext23's manipulation incentive *is*
+a log-log elasticity of award against need -- which makes it measurable. Fitting
+FEMA Public Assistance obligations against CDC/ATSDR social vulnerability, within
+disaster across the counties actually declared, finds **no vulnerability
+gradient**: sign splits 6/6 across 12 hurricanes, vulnerability explains 2.5% of
+the variance, and the pooled elasticity is -0.088 +- 0.266. That puts observed
+allocation at `alpha ≈ 1.1` -- the envy-free point, which ext23 proved is the
+only strategy-proof rule precisely *because it ignores the state*. Non-
+manipulability appears to be bought the way the theorem says it must be. See
+[docs/fema_svi_equity.md](docs/fema_svi_equity.md) for H13, including why the
+household-facing program is the one this cannot yet speak to.
+
 ext24 drops the assumption both of those make — that regions are independent
 once you know the field — and lets scarcity spread along a trade network with an
 SIS cascade borrowed from epidemiology, with a graph-convolutional head on top of
