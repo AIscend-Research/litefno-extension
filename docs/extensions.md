@@ -56,6 +56,23 @@ The extension phase focuses on low-resource deployment and accessibility.
   which it mirrors from the opposite direction: that page asks whether a generic
   Fourier bias earns its keep, this asks whether sharpening it does.
 
+- [The harmonic prior on data that actually oscillates](seasonal_real_data.md)
+  (ext31, H12) -- swaps Gray-Scott for NOAA CPC global monthly soil moisture
+  (0.5 degree, 943 months, 1948-2026) through the same 5-D HDF5 contract, to
+  answer the strongest objection to the harmonic verdict: that the prior was
+  only ever tested where no seasonal cycle existed. Six regions replace six
+  regimes and span a 6x seasonality range, with the monsoon belt at **65%** of
+  temporal variance in the annual cycle against planetswe's 5.4%. The prior
+  still does not help -- data multiplier **0.96x** at the full training set,
+  3 of 6 paired runs favouring it -- and the differential prediction inverts:
+  the three most seasonal regions get worse (mean +6.1%), two of the three least
+  seasonal improve, Spearman +0.314 where the mechanism needs negative (n=6,
+  p=0.54, single seed per region, so suggestive rather than established). The
+  harmonic arm's seed spread is 3.0x the plain arm's at the largest size. Also
+  records the leakage fix the seasonality measurement needs: 943 months is not a
+  whole number of years, and the raw annual line reads 7.4% where the truth is
+  13.4%.
+
 ## SpecScope: interrogating the trained operator
 
 The extension's main line. Everything above characterises the *data*; these ask

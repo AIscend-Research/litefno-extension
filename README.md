@@ -102,6 +102,15 @@ asks whether *sharpening* it does; neither does, on a field with no narrow band
 to exploit. See
 [docs/harmonic_verdict.md](docs/harmonic_verdict.md).
 
+ext31 answers the strongest objection to that verdict -- that the prior was only
+ever tested on data with no seasonal cycle. It swaps Gray-Scott for NOAA CPC
+global monthly soil moisture through the same 5-D contract, where six regions
+span a 6x seasonality range and the monsoon belt holds **65%** of its temporal
+variance in the annual cycle, against 5.4% for the repo's previous best case.
+The prior still does not help: a data multiplier of **0.96x**, and a differential
+prediction that inverts, with the three most seasonal regions getting worse. See
+[docs/seasonal_real_data.md](docs/seasonal_real_data.md).
+
 ![The six Gray-Scott regimes](figures/simulations/gs_atlas.png)
 
 The regimes above are re-simulated at 384x384 for legibility; training runs on
