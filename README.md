@@ -134,6 +134,20 @@ The prior still does not help: a data multiplier of **0.96x**, and a differentia
 prediction that inverts, with the three most seasonal regions getting worse. See
 [docs/seasonal_real_data.md](docs/seasonal_real_data.md).
 
+ext36 closes the other scoping on that verdict: the reproduction's negative
+result was measured only at 32x32. Sweeping 32, 64 and 128 from one native
+stream, the CP spectral arm wins at *every* resolution -- including 32x32, where
+the reference reports the opposite. That disagreement, not a resolution trend,
+is the headline, and it is most likely the training budget (24 trajectories / 30
+epochs / 2 seeds against 72 / 200 / 3), so it does not overturn the
+reproduction. Only **128x128** is measured precisely enough to carry a claim:
+both seeds agree at +19.1% and +17.5% while the CNN's seed spread falls to
+**0.1%**, against 19.5% at 64x64 where one seed reverses the sign. Two seeds
+cannot distinguish a gap that *opens* with resolution from one that was always
+there and merely became measurable, and only the repo modes policy was run, so
+scale and truncation remain confounded. See
+[docs/resolution_scaling.md](docs/resolution_scaling.md) for H15.
+
 ![The six Gray-Scott regimes](figures/simulations/gs_atlas.png)
 
 The regimes above are re-simulated at 384x384 for legibility; training runs on

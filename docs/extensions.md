@@ -328,6 +328,27 @@ empirical transfer function and extracting pole structure from them.
   deviation push toward apparent overconfidence, so the magnitude is an upper
   bound; the sign is not in doubt at 5.2x.
 
+- [Does the Fourier advantage appear above 32x32?](resolution_scaling.md)
+  (ext36, H15) -- the reproduction's negative result is explicitly scoped to
+  32x32, so this sweeps 32, 64 and 128 from one native-resolution stream. The
+  honest headline is not the intended one: **this run does not reproduce the
+  reproduction at 32x32**. The CP spectral arm beats the parameter-matched CNN
+  at *every* resolution (+12.5%, +6.4%, +18.3%), including the size where the
+  reference reports the opposite -- under a much thinner protocol (24
+  trajectories / 30 epochs / 2 seeds against 72 / 200 / 3), so it is a fact
+  about this budget rather than an overturning. Only the **128x128** cell is
+  measured precisely enough to carry a claim: both seeds agree (+19.1%, +17.5%)
+  and the CNN's seed spread collapses to **0.1%**, against 12.3% at 32 and
+  19.5% at 64 where one seed **reverses the sign** (-4.1%). So the script's
+  printed "opens with resolution" verdict is *not supported* -- the sequence is
+  non-monotone and two seeds cannot separate "the gap opens" from "the gap was
+  always there and the measurement got quieter". Two limitations are load-
+  bearing: only the `repo` modes policy ran, so scale and truncation are
+  confounded (16 of 16 modes at 32, 16 of 64 at 128) and the implemented
+  `proportional` arm that separates them was not executed; and dense `fno_s`
+  (2.1M params) is worst everywhere, so whatever helps is specific to the
+  CP-factorized low-parameter form rather than to spectral layers.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the
