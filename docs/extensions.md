@@ -200,6 +200,24 @@ empirical transfer function and extracting pole structure from them.
   every signal including random reports 0%, vacuous rather than favourable, on
   a sensitivity curve resting on 2 positives.
 
+- [Are the confidence scores honest?](uncertainty_calibration.md) (ext29, H10)
+  -- reliability diagrams, ECE and MCE for the same ensemble ext28 found ranks
+  errors as well as an oracle. Ranking is invariant to scale, so this asks the
+  independent question and gets the opposite answer. Every coverage gap is
+  negative at every level on both splits -- the intervals are never too wide,
+  only too narrow -- and ECE **doubles** off-distribution, 0.066 to 0.131
+  (MCE 0.137 to 0.217). A nominal 95% interval covers 73% of the held-out
+  regime. The error-vs-sigma diagram is worse than the coverage numbers admit:
+  achieved/claimed never drops below 1.4 in-distribution or 1.8 out of it, and
+  it is **U-shaped**, peaking at 4.6x and **5.2x** in the *most confident* bin,
+  so the signal is least trustworthy exactly where it claims certainty. A single
+  scale fit in-distribution (sigma *= 1.16) helps but cannot flatten a
+  discrepancy that varies with the claimed sigma -- rescaled out-of-distribution
+  ECE (0.094) remains worse than uncorrected in-distribution ECE (0.066). Both
+  the Gaussian assumption and the low bias of a 4-member sample standard
+  deviation push toward apparent overconfidence, so the magnitude is an upper
+  bound; the sign is not in doubt at 5.2x.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the
