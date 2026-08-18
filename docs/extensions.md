@@ -178,6 +178,22 @@ empirical transfer function and extracting pole structure from them.
   *uniform* gain would be evidence against the mechanism. **Not yet run** -- the
   model, script and tests exist; no results do.
 
+- [Data-efficiency curve: does the harmonic prior buy data?](data_efficiency.md)
+  (ext30, H11) -- the ext15 arms run across four training-set sizes at three
+  seeds, asking not whether the conditioned arm is more accurate but whether the
+  prior *substitutes for data*, which would show as a leftward shift of the
+  error-vs-size curve. It does not: the data multiplier is **1.00x** at every
+  size where it is measurable, the harmonic arm is very slightly worse at all
+  four sizes, and it wins **0 of 12** paired runs -- an effect about 2% of the
+  seed spread, consistent with its 220 extra parameters adding noise and nothing
+  else. The differential prediction fails too: maze improves 0.1% and spots, the
+  more extreme outlier the mechanism should favour most, gets slightly worse.
+  This is neither a benefit nor the uniform-gain failure ext15 named in advance;
+  it is no effect. The plain arm's own scaling is the useful number --
+  `VRMSE ~ 0.239 * n^-0.521`, residuals within 4.7%, so quadrupling the data
+  cuts error 2.04x. Data buys accuracy at the classical rate here; this prior
+  buys none of it, which is what ext15's own pre-registered low prior expected.
+
 - [Can the cross-regime gap be bought down?](cross_regime_arms.md) (ext26, H7)
   -- three arms on the leave-one-regime-out fold: baseline, noise-augmented
   (`robust`), and a 4-member ensemble on top (`robust+unc`), the last differing
