@@ -90,8 +90,9 @@ at all, uniform or targeted.
 ## This is the outcome the repo predicted
 
 ext15's own docstring recorded a low prior on the effect size before any run,
-citing two committed measurements: ext9 killed the spatial harmonic prior in its
-low-wavenumber form, and ext12 found that even with documented, exactly periodic
+citing two committed measurements (the claim's full record across all three
+forms is in [harmonic_verdict.md](harmonic_verdict.md)): ext9 killed the spatial
+harmonic prior in its low-wavenumber form, and ext12 found that even with documented, exactly periodic
 forcing, harmonics carry only 5.4% of temporal variance globally. The narrower
 claim -- a mid-spectrum band two regimes genuinely concentrate in -- does not
 rescue it at this scale.

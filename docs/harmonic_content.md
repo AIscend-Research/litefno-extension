@@ -149,6 +149,12 @@ completely.
 This is consistent with the ext9 result (peak energy at k=5 on the 4×-downsampled
 32×32 grid), which maps to k≈20 at native resolution.
 
+The per-regime split above is what motivated the mid-spectrum retry of the
+harmonic prior in ext15 — maze and spots hold ~99% of their variance above mode
+8, so a bias on those shells is not the low-k prior ext9 killed. That retry was
+measured in ext30 and came out null;
+[harmonic_verdict.md](harmonic_verdict.md) records the claim's full result.
+
 Note the trained configuration uses `MODES = min(16, H // 2)` on a 32×32 grid,
 so at model resolution it keeps every available mode — the spatial truncation is
 not binding there, and the numbers above describe what the 4× spatial

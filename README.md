@@ -90,6 +90,18 @@ one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
 for a Fourier inductive-bias advantage at that scale. See
 [docs/reproducibility_findings.md](docs/reproducibility_findings.md).
 
+A second negative sits beside it. The harmonic claim -- that naming the Fourier
+modes which matter should help -- was tested in three forms and failed twice.
+The low-wavenumber spatial prior is dead (ext9: the spectrum peaks at k=5 and
+needs 15 shells for 95% of its variance). The mid-spectrum retry on the Turing
+shells is dead (ext15/ext30: 0 of 12 paired wins, a 1.00x data multiplier, and
+no differential effect on the two regimes it targeted). The temporal form
+survives under documented forcing but accounts for only 5.4% of variance (ext12).
+Where the reproduction asks whether a *generic* Fourier bias earns its keep, this
+asks whether *sharpening* it does; neither does, on a field with no narrow band
+to exploit. See
+[docs/harmonic_verdict.md](docs/harmonic_verdict.md).
+
 ![The six Gray-Scott regimes](figures/simulations/gs_atlas.png)
 
 The regimes above are re-simulated at 384x384 for legibility; training runs on
