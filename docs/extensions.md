@@ -349,6 +349,30 @@ empirical transfer function and extracting pole structure from them.
   (2.1M params) is worst everywhere, so whatever helps is specific to the
   CP-factorized low-parameter form rather than to spectral layers.
 
+- [Does the manipulation law survive coalitions?](coalition_manipulation.md)
+  (ext35, H16) -- ext23's `|1-alpha|/alpha` was derived and checked against
+  *single-region* deviations, the weakest threat model available. Run against
+  joint deviations it survives **exactly**: the capture ratio is the same closed
+  form with the region's share replaced by the coalition's pooled share,
+  matching to 4.4e-16 over 96 cells. Two consequences are sharp. alpha = 1 is
+  **group** strategy-proof, not merely strategy-proof (ratio exactly 1 at every
+  coalition size), and a **grand coalition captures exactly nothing** -- if
+  everyone inflates by the same factor the normalisation cancels. The third is
+  the one that could have gone the other way: **collusion dilutes itself**. Joint
+  capture is **subadditive in 90 of 90 cells**, a cartel of eight winning about
+  half what its members would have won deviating one at a time, so the lone
+  deviator is the worst case and ext23's numbers were the bound rather than an
+  optimistic reading. The ratio hides the harm, though -- members do worse per
+  head while the budget moved and the welfare lost both roughly quadruple from
+  |C|=1 to |C|=8, and both are reported. The assumed corner lie is verified by
+  exhaustive search (45,216 alternative joint reports, 0 beat it). Finally,
+  ext23's capacity cap is shown to be **aimed at the wrong regions**: under
+  leximin the regions with most to gain by lying are the least-served ones and a
+  uniform cap constrains the most-served, so at ext23's own kappa = 1.5 the cap
+  never binds; it does defend the tail at kappa = 16 (9.2x held to 1.89) but only
+  for small coalitions, being redundant against large ones where dilution has
+  already done the work.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the

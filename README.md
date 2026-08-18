@@ -44,6 +44,19 @@ per-region capacities bounds what any lie can win without payments or
 verification. See
 [docs/strategic_allocation.md](docs/strategic_allocation.md) for H4.
 
+ext35 stress-tests that derivation instead of trusting it. The `|1-alpha|/alpha`
+law was checked against single-region lies, which assumes regions never
+coordinate. Under joint deviations it holds **exactly** -- the same closed form
+with the region's share replaced by the coalition's -- and two of its
+consequences sharpen: alpha = 1 turns out to be **group** strategy-proof, and a
+grand coalition captures exactly nothing. The surprise is the direction of the
+effect: **collusion dilutes itself**, subadditive in 90 of 90 cells, so the lone
+deviator is the worst case and ext23's numbers were a bound rather than an
+optimistic estimate. The same run finds ext23's capacity cap aimed at the wrong
+regions -- under leximin the regions with most to gain by lying are the
+least-served, and a uniform cap constrains the most-served. See
+[docs/coalition_manipulation.md](docs/coalition_manipulation.md) for H16.
+
 ext32 takes those two closed forms out of simulation. The family allocates
 `a ∝ g^beta` with `beta=(1-alpha)/alpha`, so ext23's manipulation incentive *is*
 a log-log elasticity of award against need -- which makes it measurable. Fitting
