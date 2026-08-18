@@ -15,6 +15,18 @@ the network should have learned" is not a matter of opinion. See
 ground-truth check, [docs/resonance_risk.md](docs/resonance_risk.md) for H1, and
 [docs/mode_transplant.md](docs/mode_transplant.md) for H2.
 
+ext34 revisits that null and finds it does not survive a paired re-test. ext21's
+transplant moved 3.55% of the network and was read against a fine-tune ceiling
+that moves 100%, which is not a fair dose comparison. With dose as a second axis
+and resonant paired against damped within each seed, the resonant arm wins **90
+of 90 paired runs** with the gap growing monotonically in dose -- ext21's null
+was an underpowered test asking a 2% effect to beat a 14-49% seed spread, and 6
+of its own 8 cells were already positive. The practical conclusion is unchanged:
+freezing every component buys +8.4% over scratch against fine-tuning's +80.4%, so
+transfer still does not usefully decompose. The axis the study was built for turns
+out to be **flat** -- the benefit is the same at every regime distance tested. See
+[docs/transplant_distance.md](docs/transplant_distance.md).
+
 ext33 ablates that instrument rather than trusting it. A spectral operator is
 mode-indexed before training, so the pole readout could have been reading its own
 architecture -- and ext20's wavenumber baseline and ext21's initialization result

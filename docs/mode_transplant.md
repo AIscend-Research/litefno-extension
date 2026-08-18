@@ -128,3 +128,25 @@ python3 scripts/mode_transplant.py --quick   # plumbing check only
 
 Outputs: `results/extensions/ext21_transplant.csv`, `ext21_overlap.csv`,
 `ext21_summary.csv`, and `figures/extensions/ext21_mode_transplant.png`.
+
+## Status update: this null does not survive a paired re-test (ext34)
+
+ext34 re-ran this comparison with a dose axis and a paired design and found the
+resonant arm ahead of its size-matched damped control in **90 of 90 paired
+runs**, with the gap growing monotonically in the number of components
+transplanted. The conclusion above should be read with that correction.
+
+The disagreement is a design difference, not a data one. Read as a relative gap
+rather than as a multiple of seed spread, **6 of the 8 cells in the table above
+are already positive**, and the two negatives are at the two largest budgets
+where scratch has already converged to fine-tune. The effect is about 2% and the
+seed spread here is 14-49%, so the one-standard-deviation-per-cell test used
+above could not have resolved it. Pairing resonant against damped within a seed
+cancels that noise; ext34 does, this does not.
+
+What survives unchanged is the practical claim. Freezing *every* component buys
++8.4% over scratch against fine-tuning's +80.4%, so transfer across these regimes
+is still real, large, and still does not usefully decompose into the
+mode-classified pieces. What fails is the stronger mechanistic reading -- that
+the basis is arbitrary and carries nothing -- since an arbitrary basis does not
+win 90 of 90 with a dose-response. See [transplant_distance.md](transplant_distance.md).

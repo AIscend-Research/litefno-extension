@@ -373,6 +373,27 @@ empirical transfer function and extracting pole structure from them.
   for small coalitions, being redundant against large ones where dilution has
   already done the work.
 
+- [H2 as a dose-response, on distance and on dose](transplant_distance.md)
+  (ext34) -- turns ext21's yes/no into a curve, and **overturns its null on the
+  way**. The blocker was an accounting one: ext21's 3-component transplant writes
+  252 of 7,106 parameters, **3.55%** of the model, and was implicitly read
+  against a fine-tune ceiling that writes 100%, so a small effect from a small
+  dose looked like no effect. Adding dose as a second axis, the resonant arm
+  beats its size-matched damped control in **90 of 90 paired runs** (every seed
+  10/10, smallest gap +0.53%) with the gap growing monotonically in dose (+1.7%,
+  +1.8%, +2.5% at 1, 2, 3 components; Spearman(dose, gap) = +0.764). ext21's null
+  was a **power failure**: re-read as relative gaps, 6 of its own 8 cells are
+  already positive with the two negatives at the largest budgets, and its
+  one-standard-deviation-per-cell test was asking a ~2% effect to beat a 14-49%
+  seed spread. Pairing within a seed cancels that noise. What does **not** change
+  is the practical conclusion -- freezing every component buys +8.4% over scratch
+  against fine-tuning's +80.4% -- so transfer is real, large, and still does not
+  usefully decompose; what fails is only the stronger claim that the basis is
+  arbitrary. The **requested axis is flat**: Spearman(distance, gap) = -0.319,
+  gaps +1.8% to +2.8% with no clean decay over a 3.5x change in both parameters,
+  so H2-as-a-curve on regime *distance* is not supported and the dose-response
+  that exists is on dose.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the
