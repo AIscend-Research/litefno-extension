@@ -103,6 +103,23 @@ empirical transfer function and extracting pole structure from them.
   itself is real and large -- full fine-tuning beats scratch by a factor of six
   at the smallest budget -- but it does not decompose.
 
+- [Ablating the instrument](pole_ablation.md) (ext33, H14) -- runs ext19's pole
+  readout on weights that never learned anything, to test whether the extracted
+  pole structure is a property of the trained operator or of the architecture.
+  Four arms share one readout and differ only in weights: trained, untrained at
+  the same seed, the trained weights shuffled within each tensor (preserving
+  each tensor's exact multiset of values), and weights resampled to the trained
+  moments. **The structure does not survive.** On the rotating system trained
+  scores **+0.9876** against the exact magnitudes -- reproducing ext19's 0.987 --
+  and no control exceeds **+0.12**, a gap of 0.871; on advection the gap is
+  0.520. Frequency separates them harder still: 1.86e-4 trained against 2.2e-2
+  to 4.7e-1. The readout measures the operator, not its construction, and ext20
+  and ext21 do not inherit an artifact. Also records a methodological finding:
+  ext20's partial-correlation control is **undefined** on these systems, because
+  the exact pole is a function of |k| alone (rho = -1.0000 rotating, -0.9996
+  advection), so partialling removes the ground truth -- which is why the
+  control has to be an ablation of the weights.
+
 ## Downstream: what the surrogate's error costs a decision
 
 - [What does a surrogate's error cost a fair decision?](fair_allocation.md)

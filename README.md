@@ -15,6 +15,16 @@ the network should have learned" is not a matter of opinion. See
 ground-truth check, [docs/resonance_risk.md](docs/resonance_risk.md) for H1, and
 [docs/mode_transplant.md](docs/mode_transplant.md) for H2.
 
+ext33 ablates that instrument rather than trusting it. A spectral operator is
+mode-indexed before training, so the pole readout could have been reading its own
+architecture -- and ext20's wavenumber baseline and ext21's initialization result
+both gave reason to suspect it. Running the identical readout on an untrained
+model, on the trained weights shuffled within each tensor, and on weights
+resampled to the trained moments, **the pole structure does not survive**: the
+trained arm scores +0.9876 against the exact magnitudes and no control exceeds
++0.12. The readout measures the operator, not its construction. See
+[docs/pole_ablation.md](docs/pole_ablation.md) for H14.
+
 A third question follows from the same testbed: if the surrogate's output is
 used to *decide* something, what does its error cost? ext22 puts a fairness-aware
 resource allocation layer on top of the reconstructed ecosystem state and finds

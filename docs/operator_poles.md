@@ -116,3 +116,23 @@ weights, is therefore not conjugate-symmetric, and `irfft2` quietly symmetrizes
 it on the way out. The composition does not model that step. The effect is under
 half a percent on the models tested and is pinned by a test so it cannot grow
 silently.
+
+## The instrument has since been ablated
+
+Everything above shows the extractor *recovers* the exact poles. It does not
+show the poles come from learning rather than from the architecture -- a
+spectral operator is mode-indexed before training, and ext20's wavenumber
+baseline and ext21's initialization result both gave reason to worry.
+
+ext33 runs this identical readout on weights that never learned: an untrained
+model at the same seed, the trained weights shuffled within each tensor, and
+weights resampled to the trained moments. The structure does not survive. On the
+rotating system the trained arm scores +0.9876 against the exact magnitudes and
+no control exceeds +0.12; frequency error is 1.86e-4 trained against 2.2e-2 to
+4.7e-1 for the controls. See [pole_ablation.md](pole_ablation.md).
+
+It also records why the obvious control could not be used: in both closed-form
+systems the exact pole is a function of |k| alone (rho = -1.0000 and -0.9996), so
+partialling out wavenumber removes the ground truth and the ablation has to be
+done on the weights instead.
+

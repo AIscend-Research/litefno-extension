@@ -1,0 +1,9 @@
+system,weights,test_vrmse,n_modes,seconds,rho_magnitude,rho_freq,rho_magnitude_vs_radius,rho_exact_vs_radius,partial_rho_magnitude,median_abs_freq_error,route_rel_diff_median
+rotating,trained,0.018303,63,34.6,0.9876,-0.097,-0.9876,-1.0,nan,0.000186,0.375299
+rotating,untrained,1.008541,63,0.7,0.1166,-0.1618,-0.1166,-1.0,nan,0.023843,0.786349
+rotating,shuffled,1.024928,63,35.5,-0.0613,0.0878,0.0613,-1.0,nan,0.475233,0.661751
+rotating,resampled,1.027175,63,34.4,0.0756,0.0492,-0.0756,-1.0,nan,0.02301,0.437255
+advection,trained,0.134825,63,34.6,0.7611,0.9518,-0.7632,-0.9996,-0.1052,0.001334,0.393884
+advection,untrained,1.020188,63,0.4,-0.2177,-0.1117,0.2144,-0.9996,-0.1273,0.468669,0.06914
+advection,shuffled,1.018117,63,34.9,0.0225,0.3966,-0.0191,-0.9996,0.127,0.022222,1.860748
+advection,resampled,1.023563,63,34.9,-0.2413,0.069,0.2394,-0.9996,-0.0737,0.027108,0.344438
