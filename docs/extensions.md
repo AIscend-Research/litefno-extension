@@ -151,6 +151,55 @@ empirical transfer function and extracting pole structure from them.
   and every width-64 configuration in the repo -- including the two its own
   protocol trains -- misses a 12-hour CPU session by a factor of two.
 
+## Generalization: off the training distribution
+
+- [Can the cross-regime gap be bought down?](cross_regime_arms.md) (ext26, H7)
+  -- three arms on the leave-one-regime-out fold: baseline, noise-augmented
+  (`robust`), and a 4-member ensemble on top (`robust+unc`), the last differing
+  from the second in exactly one field so the ensemble's contribution is
+  separable. First finding is about the gap itself: four of six regimes are no
+  harder held out than the five trained on, and spots is nearly twice as easy,
+  so the gap belongs to spirals (2.07x) and bubbles (1.87x) rather than to the
+  setup. Over those two folds `robust` closes a median 2% and `robust+unc`
+  closes -17%, widening both while degrading held-out error in 5 of 6 folds and
+  improving in-distribution error -- spirals shows it purest, the ensemble
+  posting the best seen error of any arm and the worst held-out. Folds with no
+  gap report NaN rather than dividing by a small negative excess, which would
+  turn trivial movements into 249% and -368%. The pre-registered ext10
+  prediction that the spectral outliers maze and spots should be hardest scores
+  0/2: rho(variance below mode 8, gap) = **+0.943** where the mechanism requires
+  negative, and the symmetric variant is -0.486, also the wrong sign for its own
+  claim. bubbles was still climbing at the epoch budget, so its 1.87x is a lower
+  bound.
+
+- [Accuracy under input degradation](degradation_robustness.md) (ext27, H8) --
+  a synthetic capture chain (illumination, periodic blur, sensor noise,
+  quantisation) swept 0% to 100%, every component exactly the identity at zero
+  so the clean reference is genuinely clean; both corruptions return
+  bit-identical VRMSE there, confirming it in the run. Training on the chain
+  closes a median **81%** of the degradation-induced error rise (baseline
+  degrades 16x from clean to full severity, the robust arm 2.6x). Three
+  qualifications: a **177%** clean-input tax, curves that do not cross until
+  ~20% severity so the robust arm is worse below that despite closing 92% of
+  the rise at 10%, and a held-out corruption (pixel dropout) where median
+  closure falls to **27%** and the robust arm is worse than baseline at 10%.
+  Two thirds of the apparent benefit is familiarity with the augmentation,
+  visible only because of the held-out control.
+
+- [Safe Deferral Rate](safe_deferral.md) (ext28, H9) -- whether the surrogate
+  can abstain its way back to in-distribution accuracy, where deferring costs
+  the real solver so the metric is a rate. On bubbles (a real 1.95x gap) the
+  Safe Deferral Rate is **never reached**: 80% deferral still leaves 1.05x, and
+  the **oracle never reaches it either**, so the gap is not concentrated in a
+  discardable minority and no threshold on any signal removes it. The signal is
+  not the limitation -- ensemble disagreement captures 100% of the oracle's
+  achievable gain at nearly every rate while random deferral stays flat. What it
+  is good for is triage: specificity 1.00 through 50% deferral with sensitivity
+  0.94, and every unsafe step caught at 55% with specificity still 0.96. The
+  maze fold is kept alongside because it fails differently -- no gap (0.94x), so
+  every signal including random reports 0%, vacuous rather than favourable, on
+  a sensitivity curve resting on 2 positives.
+
 ## Baseline
 
 - [In-distribution reference number for LiteFNO](baseline_reference.md) — the
