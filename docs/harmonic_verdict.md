@@ -115,6 +115,26 @@ followed from what those spectra already said. ext15's own docstring recorded a
 low prior on its effect size before running, citing ext9 and ext12 by name. It
 was right.
 
+## The objection this verdict invited, now answered
+
+Everything above ran on a field with almost no seasonal cycle, so the natural
+rebuttal was that the prior never had a fair test. ext31 removes that defence:
+NOAA CPC soil moisture, ingested through the same 5-D contract, where six
+regions span a 6x range in seasonality and the monsoon belt carries **65%** of
+its temporal variance in the annual cycle -- against 5.4% for planetswe and no
+line at all for most of Gray-Scott.
+
+The prior still does not help. The data multiplier is 0.96x at the full training
+set, three of six paired runs favour it, and the differential prediction does not
+appear: the three most seasonal regions all got *worse* (mean +6.1%) while two of
+the three least seasonal improved. See
+[seasonal_real_data.md](seasonal_real_data.md).
+
+So the claim has now failed in four forms, including on data whose seasonal mode
+is unmistakable. What that leaves is narrower and firmer than a testbed
+complaint: hand-placing a learnable bias on a named band does not beat letting
+the spectral layer learn its own weights.
+
 ## Where the evidence lives
 
 | extension | doc | result file |
