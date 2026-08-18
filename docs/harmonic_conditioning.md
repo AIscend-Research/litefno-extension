@@ -36,8 +36,10 @@ result unfalsifiable; picking it from a committed prior measurement does not.
 They share seeds, initialisation, data order, optimiser and schedule, and at
 initialisation they are **bit-identical** -- the bias starts at zero, and a test
 in `tests/test_harmonic.py` pins that the two produce equal output before any
-training. The bias adds 1-2% to the parameter count, so a difference cannot be
-attributed to model size.
+training. The bias adds a small, fixed number of parameters -- 220 of them, or
+**+2.94%**, at the script's default width of 32 (measured in ext30; the original
+commit message said 1-2%, which holds at larger widths) -- so a difference cannot
+be attributed to model size.
 
 ## The prediction, which is differential rather than uniform
 
@@ -62,10 +64,19 @@ expectation going in.
 
 ## Status: not yet measured
 
-**This experiment has not been run.** The model, the measurement script and its
-tests were committed together in `c22335c`; no results were produced then and
+**The ext15 A/B itself has not been run.** The model, the measurement script and
+its tests were committed together in `c22335c`; no results were produced then and
 none exist now. There is no `ext15_*.csv` in `results/`, and this document
 deliberately reports no numbers rather than borrowing any.
+
+Its two arms *have* since been measured, in a different experiment.
+[ext30](data_efficiency.md) runs them across four training-set sizes at three
+seeds and finds no effect: the harmonic arm is very slightly worse at every size,
+wins 0 of 12 paired runs, and buys a data multiplier of 1.00x. The differential
+prediction below does not appear either -- maze improves 0.1%, spots gets
+slightly worse. That is evidence about this conditioning at pilot scale, but it
+is not the ext15 A/B, which specifies three seeds at 100 epochs on the full
+training pool and a per-regime verdict of its own.
 
 What exists and is checkable today is the machinery and its guarantees: the
 bit-identical-at-initialisation property, the parameter-count bound, and the
