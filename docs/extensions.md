@@ -122,6 +122,15 @@ empirical transfer function and extracting pole structure from them.
   regular lattice the centrality scores are constant, which the table labels
   rather than reports as a result.
 
+- [Fairness checklist](fairness_checklist.md) — a structured statement of what
+  ext22-ext24 license, written because those extensions use the vocabulary of
+  distributive justice (envy-freeness, leximin, price of fairness) on a decision
+  problem that is entirely synthetic. Records the proxy standing behind every
+  quantity, the notions that are *not* measured (group, individual and
+  counterfactual fairness — there are no protected attributes to define them
+  over), the single-deviation assumption that all the manipulation numbers rest
+  on, and what would have to change before any of it is an equity claim.
+
 ## Cost: is any of this deployable?
 
 - [Is the low-rank operator actually deployable?](deployability.md) (ext25, H6)

@@ -229,6 +229,8 @@ generate their own PDE testbeds, so they run without The Well data or a GPU.
   (ext23, H4)
 - [Does scarcity travel on a network the operator cannot see?](docs/network_scarcity.md)
   (ext24, H5)
+- [Fairness checklist](docs/fairness_checklist.md) — what the allocation results
+  do and do not license, and the proxy behind every quantity they use
 
 ```bash
 python3 scripts/fair_allocation.py       # H3

@@ -89,7 +89,7 @@ def test_generated_svg_is_wellformed_and_self_contained(tmp_path):
 
     out = tmp_path / "mode_shells.svg"
     md.render_mode_shells(out)
-    text = out.read_text()
+    text = out.read_text(encoding="utf-8")
 
     ET.parse(out)  # raises on malformed XML, including "--" inside a comment
     assert "<script" not in text
@@ -109,6 +109,8 @@ def test_committed_svg_is_current():
     with tempfile.TemporaryDirectory() as tmp:
         fresh = Path(tmp) / "mode_shells.svg"
         md.render_mode_shells(fresh)
-        assert fresh.read_text() == committed.read_text(), (
+        assert fresh.read_text(encoding="utf-8") == committed.read_text(
+            encoding="utf-8"
+        ), (
             "figures/diagrams/mode_shells.svg is stale -- rerun scripts/make_diagrams.py"
         )
