@@ -161,6 +161,28 @@ empirical transfer function and extracting pole structure from them.
   over), the single-deviation assumption that all the manipulation numbers rest
   on, and what would have to change before any of it is an equity claim.
 
+- [Where do real disaster allocations sit in the alpha-family?](fema_svi_equity.md)
+  (ext32, H13) -- turns ext22's fragility law and ext23's manipulation result
+  from statements about a family of rules into a measurement of one real
+  allocation, using FEMA Public Assistance obligations against CDC/ATSDR social
+  vulnerability. The bridge is exact and tested across the family rather than
+  asserted: the family allocates `a ∝ g^beta` with `beta=(1-alpha)/alpha`, so
+  ext23's manipulation incentive `|1-alpha|/alpha` **is** the fitted log-log
+  elasticity. Every fit is within one disaster, across only the counties FEMA
+  declared for it, because Public Assistance tracks damage and a pooled
+  cross-section would measure where storms land. Across 12 hurricanes since
+  FY2015 there is **no vulnerability gradient**: sign splits 6/6, median R2 is
+  **0.025**, the inverse-variance pooled elasticity is **-0.088 +- 0.266**
+  (z = -0.33), and only 2 of 12 slopes beat their own permutation null -- in
+  opposite directions. Pooled `alpha_hat = 1.10` puts observed allocation
+  statistically at the envy-free point, which ext23 proved is the only
+  strategy-proof rule *because it ignores the state*, and ext22 puts at exactly
+  zero sensitivity to forecast error. The doc states plainly that "sits at
+  alpha=1" and "has no detectable signal" are the same observation here. The
+  household-facing Individual Assistance arm, where a gradient would actually be
+  expected, is **underpowered and not reported as a result** -- registration
+  volumes skipped every large hurricane and exactly one disaster survived.
+
 ## Cost: is any of this deployable?
 
 - [Is the low-rank operator actually deployable?](deployability.md) (ext25, H6)
