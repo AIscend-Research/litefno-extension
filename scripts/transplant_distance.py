@@ -87,8 +87,54 @@ import torch                                                    # noqa: E402
 from litefno.specscope import fit, one_step_vrmse, transplant    # noqa: E402
 from litefno.systems import rotating_diffusion                   # noqa: E402
 
-ARMS = ("scratch", "finetune", "transplant_resonant", "transplant_damped")
 SOURCE = dict(diffusion=0.4, omega=0.6)          # ext21's source, unchanged
+
+# The dose axis, and the reason this experiment needed one. ext21 transplanted
+# the matched resonant/damped sets -- 3 components -- and read a null. But 3 CP
+# components carry the mode-axis factors and rank weight of 3 of 8 ranks across
+# 4 spectral layers: 252 of the model's 7,106 parameters, or **3.55%**. The
+# fine-tune ceiling it was implicitly compared against moves 100%. A 2e-5 move
+# from 3.55% of the weights is not evidence that the subspace carries nothing;
+# it is evidence that the dose was small. Varying dose is what separates those.
+#
+# The matched sets cap at 3 (the classifier finds 3 resonant and 5 damped, and
+# ext21 trims to the smaller), so the matched ladder cannot go past k = 3. The
+# ceiling is supplied instead by `transplant_all`, which copies **every** rank
+# component's mode structure -- the entire claimed shared physics, 9.3% of the
+# spectral parameters -- and has no size-matched control by construction. It is
+# a dose ceiling, not an H2 test, and is labelled as one.
+DOSES = (1, 2, 3)
+
+
+def params_moved(model, n_components: int) -> dict:
+    """How much of the network a k-component transplant actually writes.
+
+    The number the blocked first run of this experiment was missing. Without it
+    a null transplant and a null *dose* are indistinguishable.
+    """
+    total = sum(p.numel() for p in model.parameters())
+    spectral = sum(p.numel() for L in model.spectral_layers
+                   for p in L.parameters())
+    per = sum(L.factor_m1.shape[0] + L.factor_m2.shape[0] + 1
+              for L in model.spectral_layers)
+    moved = per * n_components
+    return {"params_moved": int(moved),
+            "frac_of_model": moved / total,
+            "frac_of_spectral": moved / spectral}
+
+
+def arm_name(kind: str, dose: int) -> str:
+    return kind if kind in ("scratch", "finetune", "transplant_all") \
+        else f"{kind}_{dose}"
+
+
+def build_arms(doses) -> list[tuple]:
+    """(kind, dose) pairs. Order puts the controls first for readable logs."""
+    arms = [("scratch", 0), ("finetune", -1), ("transplant_all", -2)]
+    for k in doses:
+        arms.append(("transplant_resonant", k))
+        arms.append(("transplant_damped", k))
+    return arms
 
 
 def ladder(distances, ray: str) -> dict:
@@ -118,7 +164,7 @@ def make_regime(params: dict, n_traj: int, n_steps: int, size: int, seed: int):
 
 
 def run_cell(arm: str, source_model, params: dict, budget: int, args,
-             device: str, seed: int, components: dict) -> dict:
+             device: str, seed: int, components: dict, dose: int = 0) -> dict:
     """One (arm, regime, seed). Identical to ext21's run_arm but regime-driven.
 
     The target data seed is offset from the source's so that ``d = 0`` is a
@@ -133,13 +179,25 @@ def run_cell(arm: str, source_model, params: dict, budget: int, args,
     info = {"n_components": 0}
     if arm == "finetune":
         model.load_state_dict(source_model.state_dict())
+    elif arm == "transplant_all":
+        info = transplant(model, source_model, range(args.rank))
     elif arm == "transplant_resonant":
-        info = transplant(model, source_model, components["resonant"])
+        info = transplant(model, source_model, components["resonant"][:dose])
     elif arm == "transplant_damped":
-        info = transplant(model, source_model, components["damped"])
+        info = transplant(model, source_model, components["damped"][:dose])
+    moved = params_moved(model, info["n_components"])
+    if arm == "finetune":
+        # a warm start writes every weight, which is the point of having it as
+        # the ceiling: 100% dose, no freezing
+        total = sum(q.numel() for q in model.parameters())
+        moved = {"params_moved": total, "frac_of_model": 1.0,
+                 "frac_of_spectral": 1.0}
     t0 = time.time()
     fit(model, train, epochs=args.epochs, lr=args.lr, device=device, seed=seed)
-    row = {"arm": arm, "n_components": info["n_components"],
+    row = {"arm": arm_name(arm, dose), "kind": arm, "dose": dose,
+           "n_components": info["n_components"],
+           "params_moved": moved["params_moved"],
+           "frac_of_model": round(moved["frac_of_model"], 5),
            "test_vrmse": float(one_step_vrmse(model, test, device)),
            "train_s": round(time.time() - t0, 1)}
     for h in info.get("handles", []):
@@ -148,86 +206,127 @@ def run_cell(arm: str, source_model, params: dict, budget: int, args,
 
 
 def summarise(rows: list[dict]) -> list[dict]:
-    """Per (ray, distance): mean error by arm and the resonant-minus-damped gap.
+    """Per (ray, distance, dose): resonant vs its size-matched damped control.
 
-    The gap is signed so that **positive means the resonant transplant is
-    better** (lower error), which is the direction H2 predicts. It is expressed
-    relative to the damped control so distances with different absolute
-    difficulty stay comparable.
+    The gap is signed so **positive means the resonant transplant is better**
+    (lower error), which is the direction H2 predicts, and is expressed relative
+    to the damped control so cells of different absolute difficulty stay
+    comparable. Pairing is per seed: same seed means same initialisation and
+    same target draw, so the difference is the transplanted subspace and
+    nothing else.
     """
-    keys = sorted({(r["ray"], r["distance"]) for r in rows})
+    keys = sorted({(r["ray"], r["distance"], r["dose"]) for r in rows
+                   if r["kind"] == "transplant_resonant"})
     out = []
-    for ray, d in keys:
-        cell = [r for r in rows if r["ray"] == ray and r["distance"] == d]
-        by = {a: np.array([r["test_vrmse"] for r in cell if r["arm"] == a],
-                          dtype=float) for a in ARMS}
-        if any(len(v) == 0 for v in by.values()):
+    for ray, d, dose in keys:
+        def pick(kind, k=None):
+            return np.array([r["test_vrmse"] for r in rows
+                             if r["ray"] == ray and r["distance"] == d
+                             and r["kind"] == kind
+                             and (k is None or r["dose"] == k)], dtype=float)
+        res, dam = pick("transplant_resonant", dose), pick("transplant_damped", dose)
+        scratch, ft = pick("scratch"), pick("finetune")
+        allc = pick("transplant_all")
+        if len(res) == 0 or len(dam) == 0 or len(scratch) == 0:
             continue
-        res, dam = by["transplant_resonant"], by["transplant_damped"]
-        # paired per seed where possible: same seed means same init and data
         n = min(len(res), len(dam))
         rel = (dam[:n] - res[:n]) / np.where(dam[:n] > 0, dam[:n], np.nan)
+        moved = [r["frac_of_model"] for r in rows
+                 if r["kind"] == "transplant_resonant" and r["dose"] == dose]
         out.append({
-            "ray": ray, "distance": d,
+            "ray": ray, "distance": d, "dose": dose,
+            "frac_of_model": float(np.mean(moved)) if moved else float("nan"),
             "n_seeds": int(n),
-            "scratch": float(by["scratch"].mean()),
-            "finetune": float(by["finetune"].mean()),
+            "scratch": float(scratch.mean()),
+            "finetune": float(ft.mean()) if len(ft) else float("nan"),
+            "transplant_all": float(allc.mean()) if len(allc) else float("nan"),
             "resonant": float(res.mean()),
             "damped": float(dam.mean()),
             "gap_rel": float(np.nanmean(rel)),
             "gap_rel_sd": float(np.nanstd(rel)),
             "resonant_wins": int((res[:n] < dam[:n]).sum()),
-            "finetune_vs_scratch": float(
-                (by["scratch"].mean() - by["finetune"].mean())
-                / by["scratch"].mean()) if by["scratch"].mean() > 0 else float("nan"),
+            "finetune_vs_scratch": (
+                float((scratch.mean() - ft.mean()) / scratch.mean())
+                if len(ft) and scratch.mean() > 0 else float("nan")),
+            "all_vs_scratch": (
+                float((scratch.mean() - allc.mean()) / scratch.mean())
+                if len(allc) and scratch.mean() > 0 else float("nan")),
         })
     return out
 
 
 def print_report(summary: list[dict]) -> None:
-    print("\n=== H2 as a dose-response on regime distance ===")
-    print("    gap_rel > 0 means the resonant transplant beat the size-matched")
+    print("\n=== H2 as a dose-response on regime distance and on dose ===")
+    print("    gap_rel > 0 means the resonant transplant beat its size-matched")
     print("    damped control -- the direction H2 predicts. d=0 is the same")
     print("    regime with a fresh draw and a fresh init: the easiest possible")
     print("    case for transplanting.\n")
+
+    print("  A. the dose axis: does copying more of the operator do more?")
+    print(f"    {'dose':>5s} {'%model':>7s} {'scratch':>9s} {'resonant':>9s} "
+          f"{'damped':>9s} {'gap_rel':>9s} {'wins':>8s}")
+    doses = sorted({s["dose"] for s in summary})
+    for k in doses:
+        sub = [s for s in summary if s["dose"] == k]
+        w = sum(s["resonant_wins"] for s in sub)
+        n = sum(s["n_seeds"] for s in sub)
+        print(f"    {k:5d} {np.mean([s['frac_of_model'] for s in sub]):6.2%} "
+              f"{np.mean([s['scratch'] for s in sub]):9.5f} "
+              f"{np.mean([s['resonant'] for s in sub]):9.5f} "
+              f"{np.mean([s['damped'] for s in sub]):9.5f} "
+              f"{np.mean([s['gap_rel'] for s in sub]):>+8.1%} {w:4d}/{n:<4d}")
+    one = [s for s in summary if s["dose"] == doses[-1]]
+    print(f"\n    ceilings, averaged over every cell:")
+    print(f"      scratch          {np.mean([s['scratch'] for s in one]):.5f}")
+    print(f"      transplant_all   "
+          f"{np.nanmean([s['transplant_all'] for s in one]):.5f}   "
+          f"(all {len(doses) and ''}rank components frozen, no matched control)")
+    print(f"      finetune         "
+          f"{np.nanmean([s['finetune'] for s in one]):.5f}   (100% dose)")
+    print(f"      all_vs_scratch   "
+          f"{np.nanmean([s['all_vs_scratch'] for s in one]):+.1%}")
+    print(f"      ft_vs_scratch    "
+          f"{np.nanmean([s['finetune_vs_scratch'] for s in one]):+.1%}")
+
+    print("\n  B. the distance axis, at the largest matched dose")
     hdr = (f"    {'ray':>8s} {'dist':>6s} {'scratch':>9s} {'finetune':>9s} "
            f"{'resonant':>9s} {'damped':>9s} {'gap_rel':>9s} {'wins':>6s}")
     print(hdr)
     print("    " + "-" * (len(hdr) - 4))
-    for s in summary:
+    for s in sorted(one, key=lambda s: (s["ray"], s["distance"])):
         print(f"    {s['ray']:>8s} {s['distance']:>6.2f} {s['scratch']:>9.5f} "
               f"{s['finetune']:>9.5f} {s['resonant']:>9.5f} {s['damped']:>9.5f} "
               f"{s['gap_rel']:>+8.1%} {s['resonant_wins']}/{s['n_seeds']:<4d}")
 
     g = np.array([s["gap_rel"] for s in summary], dtype=float)
     d = np.array([s["distance"] for s in summary], dtype=float)
+    k = np.array([s["dose"] for s in summary], dtype=float)
     wins = sum(s["resonant_wins"] for s in summary)
     tot = sum(s["n_seeds"] for s in summary)
     print(f"\n    resonant beat damped in {wins}/{tot} paired runs "
           f"(a coin gives {tot/2:.0f})")
-    print(f"    gap_rel: mean {g.mean():+.1%}  sd {g.std():.1%}  "
-          f"range {g.min():+.1%} to {g.max():+.1%}")
+    print(f"    gap_rel: mean {np.nanmean(g):+.1%}  sd {np.nanstd(g):.1%}  "
+          f"range {np.nanmin(g):+.1%} to {np.nanmax(g):+.1%}")
 
     ok = np.isfinite(g) & np.isfinite(d)
     if ok.sum() >= 3 and np.ptp(d[ok]) > 0:
-        rho = mt_spearman(d[ok], g[ok])
-        print(f"    Spearman(distance, gap) = {rho:+.3f}   "
-              "(H2-as-a-curve predicts negative: closer regimes transplant better)")
+        print(f"    Spearman(distance, gap) = {mt_spearman(d[ok], g[ok]):+.3f}"
+              "   (H2-as-a-curve predicts negative)")
+    if ok.sum() >= 3 and np.ptp(k[ok]) > 0:
+        print(f"    Spearman(dose, gap)     = {mt_spearman(k[ok], g[ok]):+.3f}"
+              "   (a real subspace predicts positive)")
 
     zero = [s for s in summary if s["distance"] == 0.0]
     if zero:
-        z = np.mean([s["gap_rel"] for s in zero])
+        z = np.nanmean([s["gap_rel"] for s in zero])
         zw = sum(s["resonant_wins"] for s in zero)
         zn = sum(s["n_seeds"] for s in zero)
         print(f"\n    at d = 0 (same regime): gap {z:+.1%}, resonant wins "
               f"{zw}/{zn}")
-        print("    a flat curve including d=0 says the basis is arbitrary, "
-              "which is\n    ext21's reading; a positive d=0 decaying with "
-              "distance would say\n    ext21 measured the tail of a real effect")
-
-    ft = np.array([s["finetune_vs_scratch"] for s in summary], dtype=float)
-    print(f"\n    full fine-tune vs scratch: mean {np.nanmean(ft):+.1%} "
-          "(transfer itself, which ext21 found real and large)")
+        print("    a flat surface in BOTH dose and distance says the basis is")
+        print("    arbitrary, which is ext21's reading. A positive d=0 decaying")
+        print("    with distance, or a gap growing with dose, would say ext21")
+        print("    measured the tail of a real effect at too small a dose.")
 
 
 def mt_spearman(x, y) -> float:
@@ -271,6 +370,9 @@ def main() -> None:
     p.add_argument("--budget", type=int, default=4,
                    help="target trajectories; ext21 saw transfer matter most "
                         "at the smallest budgets")
+    p.add_argument("--doses", type=int, nargs="+", default=list(DOSES),
+                   help="components transplanted per arm; capped at the "
+                        "matched-set size, with transplant_all as the ceiling")
     p.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     p.add_argument("--source-traj", type=int, default=16)
     p.add_argument("--n-test-traj", type=int, default=8)
@@ -301,8 +403,22 @@ def main() -> None:
         device=args.device, seed=0)
     base = src_train[0, 0].transpose(2, 0, 1)
     components = mt.classify_components(source, base, args, args.device)
+    doses = [k for k in args.doses if k <= components["n_matched"]]
+    dropped = [k for k in args.doses if k > components["n_matched"]]
+    arms = build_arms(doses)
+    probe = mt.build(args, seed=0)
     print(f"  resonant {len(components['resonant'])}, "
-          f"damped {len(components['damped'])} components", flush=True)
+          f"damped {len(components['damped'])} components; "
+          f"matched at {components['n_matched']}", flush=True)
+    for k in doses + [args.rank]:
+        m = params_moved(probe, k)
+        print(f"    dose {k}: {m['params_moved']:5d} params "
+              f"= {m['frac_of_model']:.2%} of the model, "
+              f"{m['frac_of_spectral']:.2%} of the spectral layers", flush=True)
+    if dropped:
+        print(f"    (doses {dropped} dropped: the size-matched sets cap at "
+              f"{components['n_matched']}; transplant_all covers the ceiling)",
+              flush=True)
 
     # d = 0 is the same regime on every ray, so it is measured once per ray and
     # those runs pool into a single anchor with more seeds behind it -- stated
@@ -315,18 +431,19 @@ def main() -> None:
             print(f"\n  [{ray} d={d:.2f} (check {got:.2f}) "
                   f"D={params['diffusion']:.3f} w={params['omega']:.3f}]",
                   flush=True)
-            for arm in ARMS:
+            for kind, dose in arms:
                 for seed in args.seeds:
-                    r = run_cell(arm, source, params, args.budget, args,
-                                 args.device, seed, components)
+                    r = run_cell(kind, source, params, args.budget, args,
+                                 args.device, seed, components, dose=dose)
                     r.update(ray=ray, distance=d, seed=seed,
                              diffusion=params["diffusion"],
                              omega=params["omega"], budget=args.budget)
                     rows.append(r)
+                name = arm_name(kind, dose)
                 vals = [x['test_vrmse'] for x in rows
                         if x['ray'] == ray and x['distance'] == d
-                        and x['arm'] == arm]
-                print(f"      {arm:>20s} {np.mean(vals):.5f}", flush=True)
+                        and x['arm'] == name]
+                print(f"      {name:>22s} {np.mean(vals):.5f}", flush=True)
 
     summary = summarise(rows)
     print_report(summary)
