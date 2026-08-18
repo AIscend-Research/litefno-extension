@@ -55,6 +55,35 @@ cost that does not depend on batch size. Folding that reconstruction once at eva
 time is worth 1.4-1.8x for bitwise-identical outputs and an unchanged checkpoint.
 See [docs/deployability.md](docs/deployability.md) for H6.
 
+ext26-28 ask what happens when the operator leaves the distribution it trained
+on, and find that the standard answers do not work and the repo's own
+explanation for *which* regimes are hard is inverted. Four of six Gray-Scott
+regimes are no harder held out than the five the model trained on, so the
+"cross-regime gap" belongs to spirals and bubbles specifically; across the two
+folds that have one, noise-augmented training closes a median **2%** and a
+4-member ensemble makes it *worse*, widening both and degrading held-out error
+in 5 of 6 folds while improving in-distribution error. The pre-registered ext10
+prediction -- that the spectral outliers maze and spots should be hardest --
+scores 0/2, with rank correlation **+0.943** where the mechanism required a
+negative one: it is low-wavenumber energy, not spectral distance, that tracks
+the gap. Degradation is the one place training helps, closing a median 81% of
+the error rise from a synthetic capture chain -- but only 27% for a corruption
+it never saw, and at a 177% clean-input tax. And deferral cannot buy the gap
+back: ensemble disagreement ranks failures as well as an oracle does, yet
+neither reaches in-distribution accuracy at any threshold, because the error is
+not concentrated in a discardable minority. ext29 completes that picture by
+asking whether the same signal is *honest* rather than merely well-ordered, and
+finds it is not: the ensemble is overconfident at every level on both splits,
+ECE **doubles** off-distribution (0.066 to 0.131), a nominal 95% interval covers
+73%, and the achieved/claimed error ratio is U-shaped and worst -- **5.2x** --
+in the bin the model is most sure about. One rescaling fit in-distribution does
+not reach it. Ranking is invariant to scale, so both results hold at once: the
+signal is excellent for ordering predictions and misleading as an error bar. See
+[docs/cross_regime_arms.md](docs/cross_regime_arms.md) for H7,
+[docs/degradation_robustness.md](docs/degradation_robustness.md) for H8,
+[docs/safe_deferral.md](docs/safe_deferral.md) for H9, and
+[docs/uncertainty_calibration.md](docs/uncertainty_calibration.md) for H10.
+
 The reproduction this builds on stands unchanged: on Gray-Scott at 32x32 across
 three seeds, a parameter-matched low-rank CNN matches or outperforms LiteFNO on
 one-step VRMSE and on autoregressive rollout, so there is no consistent evidence
@@ -245,6 +274,27 @@ python3 scripts/network_scarcity.py      # H5
 
 ```bash
 python3 scripts/deployability.py         # H6
+```
+
+### Generalization: what happens off the training distribution
+
+- [Leave-one-regime-out generalization](docs/cross_regime.md) (ext14)
+- [Harmonic conditioning on the Turing shells](docs/harmonic_conditioning.md)
+  (ext15, not yet run)
+- [Can the cross-regime gap be bought down?](docs/cross_regime_arms.md)
+  (ext26, H7)
+- [Accuracy under input degradation](docs/degradation_robustness.md)
+  (ext27, H8)
+- [Safe Deferral Rate: can the model abstain its way back?](docs/safe_deferral.md)
+  (ext28, H9)
+- [Are the confidence scores honest?](docs/uncertainty_calibration.md)
+  (ext29, H10)
+
+```bash
+python3 scripts/cross_regime.py            # H7
+python3 scripts/degradation_sweep.py       # H8
+python3 scripts/safe_deferral.py           # H9
+python3 scripts/uncertainty_calibration.py # H10
 ```
 
 ### Spectral characterisation of the data

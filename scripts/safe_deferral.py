@@ -416,8 +416,11 @@ def main() -> None:
             rows.append({"held_out": args.held_out, "signal": name,
                          "members": args.members, "epochs": args.epochs,
                          "seed": args.seed, **r})
-    write_csv(args.out_dir / "ext28_deferral.csv", rows)
-    write_csv(args.out_dir / "ext28_summary.csv", [{
+    # the held-out regime is part of the filename: which fold a deferral curve
+    # came from changes what it means, and a fold with no gap (maze, 0.94x)
+    # must not silently overwrite one that has a gap
+    write_csv(args.out_dir / f"ext28_deferral_{args.held_out}.csv", rows)
+    write_csv(args.out_dir / f"ext28_summary_{args.held_out}.csv", [{
         "held_out": args.held_out, "signal": name,
         "safe_deferral_rate": safe_deferral_rate(cur),
         "reference_vrmse": reference, "base_held_vrmse": base,
