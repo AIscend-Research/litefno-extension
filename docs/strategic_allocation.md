@@ -186,10 +186,15 @@ transfers, which is the setting this whole extension is in.
 
 ## Honest limits
 
-- **Single deviations only.** Every incentive ratio here assumes one region lies
-  while the rest are truthful. Coalitions are not tested, and for egalitarian
-  rules a coalition is the natural threat: several regions understating together
-  move the common outcome level in a way no single deviation can.
+- **Single deviations only** -- *closed by ext35*. Every incentive ratio here
+  assumes one region lies while the rest are truthful, and for egalitarian rules
+  a coalition is the natural threat: several regions understating together move
+  the common outcome level in a way no single deviation can.
+  [coalition_manipulation.md](coalition_manipulation.md) ran the law against
+  joint deviations and it survives exactly -- the single-region formula with the
+  region's share replaced by the coalition's pooled share, to 4.4e-16 over 96
+  cells -- so alpha = 1 is group strategy-proof, not merely strategy-proof, and
+  collusion makes manipulation *worse* for the colluders.
 - **The cap is exogenous.** It has to be. A cap set from reported gains would be
   circular — under an egalitarian rule a region that understates raises both its
   allocation *and* its cap, and the bound evaporates. Tying caps to a trusted

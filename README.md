@@ -363,7 +363,8 @@ python3 scripts/deployability.py         # H6
 
 - [Leave-one-regime-out generalization](docs/cross_regime.md) (ext14)
 - [Harmonic conditioning on the Turing shells](docs/harmonic_conditioning.md)
-  (ext15, not yet run)
+  (ext15 — run at the pre-registered fundamental 4.0 and swept at 3.5; null
+  both times, and the differential prediction inverts)
 - [Data-efficiency curve: does the harmonic prior buy data?](docs/data_efficiency.md)
   (ext30, H11)
 - [Can the cross-regime gap be bought down?](docs/cross_regime_arms.md)

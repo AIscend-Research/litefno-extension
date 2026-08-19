@@ -66,11 +66,14 @@ Reported so the direction and the size are both visible.
 | Max-efficiency manipulability | Measured | Unbounded, on 100% of states; a 20% misreport flips the argmax and takes the whole budget |
 | Leximin with per-region capacity bounds a lie | Measured | Against a 10x misreport, winnings cut 6.93x -> 1.64x, for 4.2% of the worst-off region's welfare |
 
-**The load-bearing caveat on the last block:** every incentive number assumes
-**one region lies and the rest are truthful.** Coalitions are untested, and for
+**The load-bearing caveat on the last block, since closed:** every incentive
+number above assumes **one region lies and the rest are truthful** -- and for
 egalitarian rules a coalition is the natural threat, because several regions
 understating together move the common outcome level in a way no single deviation
-can. This is the single largest gap in the mechanism-design results.
+can. ext35 ([coalition_manipulation.md](coalition_manipulation.md)) ran the law
+against joint deviations: it survives exactly, with the region's share replaced
+by the coalition's pooled share, so alpha = 1 is **group** strategy-proof and
+collusion makes manipulation worse for the colluders.
 
 ## 4. Proxies, and what each stands in for
 
@@ -129,10 +132,9 @@ In rough order of leverage:
    with the fairness rule.
 3. **Protected attributes.** Without them, no group-fairness notion is even
    definable, and disparate impact cannot be measured.
-4. **Coalitions.** The manipulation results are single-deviation only.
-5. **Heterogeneous resources.** Envy-freeness is degenerate until there is more
+4. **Heterogeneous resources.** Envy-freeness is degenerate until there is more
    than one resource type.
-6. **A deployment test.** Nothing here has been run against a decision anyone
+5. **A deployment test.** Nothing here has been run against a decision anyone
    acted on.
 
 Until at least (1) and (2) hold, the correct reading of ext22-ext24 is: *these

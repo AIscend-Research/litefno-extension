@@ -244,8 +244,13 @@ empirical transfer function and extracting pole structure from them.
   starts at zero, pinned by a test -- and the bias adds 1-2% of parameters, so a
   difference cannot be attributed to size. The prediction is differential: it
   should help maze and spots and do nothing for spirals and gliders, and a
-  *uniform* gain would be evidence against the mechanism. **Not yet run** -- the
-  model, script and tests exist; no results do.
+  *uniform* gain would be evidence against the mechanism. **Run as specified**
+  -- three seeds, 100 epochs, fundamental 4.0 -- and null: the conditioned arm
+  is worse in 3 of 3 seeds, and the differential prediction inverts (rho =
+  -0.200, with the largest improvement going to spirals, the most low-wavenumber
+  regime in the set). A one-off sweep at fundamental 3.5 is null too. The gap is
+  ~345x smaller than the control's own seed spread; see
+  [harmonic_conditioning.md](harmonic_conditioning.md).
 
 - [Data-efficiency curve: does the harmonic prior buy data?](data_efficiency.md)
   (ext30, H11) -- the ext15 arms run across four training-set sizes at three
