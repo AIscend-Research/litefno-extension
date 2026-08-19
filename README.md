@@ -15,6 +15,18 @@ the network should have learned" is not a matter of opinion. See
 ground-truth check, [docs/resonance_risk.md](docs/resonance_risk.md) for H1, and
 [docs/mode_transplant.md](docs/mode_transplant.md) for H2.
 
+ext34 revisits that null and finds it does not survive a paired re-test. ext21's
+transplant moved 3.55% of the network and was read against a fine-tune ceiling
+that moves 100%, which is not a fair dose comparison. With dose as a second axis
+and resonant paired against damped within each seed, the resonant arm wins **90
+of 90 paired runs** with the gap growing monotonically in dose -- ext21's null
+was an underpowered test asking a 2% effect to beat a 14-49% seed spread, and 6
+of its own 8 cells were already positive. The practical conclusion is unchanged:
+freezing every component buys +8.4% over scratch against fine-tuning's +80.4%, so
+transfer still does not usefully decompose. The axis the study was built for turns
+out to be **flat** -- the benefit is the same at every regime distance tested. See
+[docs/transplant_distance.md](docs/transplant_distance.md).
+
 ext33 ablates that instrument rather than trusting it. A spectral operator is
 mode-indexed before training, so the pole readout could have been reading its own
 architecture -- and ext20's wavenumber baseline and ext21's initialization result
@@ -43,6 +55,19 @@ strategy-proof because it ignores the state. A leximin implementation with
 per-region capacities bounds what any lie can win without payments or
 verification. See
 [docs/strategic_allocation.md](docs/strategic_allocation.md) for H4.
+
+ext35 stress-tests that derivation instead of trusting it. The `|1-alpha|/alpha`
+law was checked against single-region lies, which assumes regions never
+coordinate. Under joint deviations it holds **exactly** -- the same closed form
+with the region's share replaced by the coalition's -- and two of its
+consequences sharpen: alpha = 1 turns out to be **group** strategy-proof, and a
+grand coalition captures exactly nothing. The surprise is the direction of the
+effect: **collusion dilutes itself**, subadditive in 90 of 90 cells, so the lone
+deviator is the worst case and ext23's numbers were a bound rather than an
+optimistic estimate. The same run finds ext23's capacity cap aimed at the wrong
+regions -- under leximin the regions with most to gain by lying are the
+least-served, and a uniform cap constrains the most-served. See
+[docs/coalition_manipulation.md](docs/coalition_manipulation.md) for H16.
 
 ext32 takes those two closed forms out of simulation. The family allocates
 `a ∝ g^beta` with `beta=(1-alpha)/alpha`, so ext23's manipulation incentive *is*
